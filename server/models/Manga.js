@@ -42,14 +42,14 @@ const MangaSchema = new mongoose.Schema({
   createdData: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
 MangaSchema.statics.toAPI = (doc) => ({
   title: doc.title,
   currentChapter: doc.currentChapter,
   maxChapter: doc.maxChapter,
-  description: doc.description
+  description: doc.description,
 });
 
 MangaSchema.statics.findByOwner = (ownerId, callback) => {
@@ -74,7 +74,7 @@ MangaSchema.statics.findByOwner = (ownerId, callback) => {
 
 //     console.log(doc);
 //     res.json({ redirect: '/maker' });
-//Manga
+// Manga
 // };
 
 MangaModel = mongoose.model('Manga', MangaSchema);

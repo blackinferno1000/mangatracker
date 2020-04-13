@@ -2,9 +2,9 @@ const models = require('../models');
 
 const { Manga } = models;
 
-const getManga = (req, res) => {
+const getManga = () => {
 
-}
+};
 
 const trackerPage = (req, res) => {
   Manga.MangaModel.findByOwner(req.session.account._id, (err, docs) => {
