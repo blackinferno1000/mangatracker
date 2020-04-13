@@ -4,11 +4,11 @@
   "description": "final project for IGME 430",
   "main": "./server/app.js",
   "scripts": {
-    "nodemon": "nodemon --watch ./server ./server/app.js",
+    "build": "gulp build",
+    "watch": "gulp watch",
     "start": "node ./server/app.js",
     "pretest": "eslint ./server --fix",
-    "test": "echo \"Tests complete\"",
-    "build": ""
+    "test": "echo \"Tests complete\""
   },
   "author": "Sean Lightfoot",
   "license": "ISC",
