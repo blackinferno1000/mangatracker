@@ -42,14 +42,14 @@ const MangaSchema = new mongoose.Schema({
   createdData: {
     type: Date,
     default: Date.now,
-  },
+  }
 });
 
 MangaSchema.statics.toAPI = (doc) => ({
   title: doc.title,
   currentChapter: doc.currentChapter,
   maxChapter: doc.maxChapter,
-  description: doc.description,
+  description: doc.description
 });
 
 MangaSchema.statics.findByOwner = (ownerId, callback) => {
@@ -59,23 +59,6 @@ MangaSchema.statics.findByOwner = (ownerId, callback) => {
 
   return MangaModel.find(search).select('title currentChapter maxChapter description').lean().exec(callback);
 };
-
-// DomoSchema.statics.updateDomo = (domoId, callback) => {
-//   const search = {
-//     name: domoId
-//   }
-
-//   return Domo.DomoModel.findOneAndUpdate(search, {$set:
-//     {name: req.body.name, age: req.body.age, personality: req.body.personality}},
-//     (err, doc) => {
-//     if(err){
-//       console.log("Something wrong when updating data!");
-//     }
-
-//     console.log(doc);
-//     res.json({ redirect: '/maker' });
-// Manga
-// };
 
 MangaModel = mongoose.model('Manga', MangaSchema);
 
