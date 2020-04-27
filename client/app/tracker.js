@@ -45,43 +45,30 @@ const addManga = (e) => {
 };
 
 //deletes cards from datamodel and view
-const deleteCard = (id) => {
+const deleteCard = (e, id) => {
   // let updateForms = document.querySelectorAll('.updateForms');
-  deleteManga(id);
+  console.log(e);
+  console.log(id);
+  deleteManga(e);
 };
 
 //updates mangaList on server
 const deleteManga = (id) => {
   // for (let form of updateForms) {
   //   if (e.target.form.id === form.id) {
-      
+
   //   }
   // }
-    
+
   // _csrf = form.querySelector("input[type='hidden']");
+
   const formData = `_csrf=${csrfToken}&id=${id}`;
-  sendAjax('POST', '/deleteManga', formData, null);
-};
-//updates view
-const forceUpdateList = () => {
-  forceUpdate();
+  sendAjax("POST", "/deleteManga", formData, () => {
+    console.log("succesful deletion");
+    loadMangaFromServer();
+  });
 };
 
-//parses incoming json from requests
-const parseJSON = (xhr, content) => {
-  const obj = JSON.parse(xhr.response);
-
-  if (xhr.response) {
-    this.mangaList = obj;
-  }
-};
-//handles if json needs parsing
-const handleResponse = (xhr, parse) => {
-  const content = document.querySelector("#content");
-  if (parse) {
-    this.parseJSON(xhr, content);
-  }
-};
 //sends post requests
 const sendPost = (e, postForms) => {
   e.preventDefault();
@@ -90,14 +77,17 @@ const sendPost = (e, postForms) => {
     if (e.target.form.id === form.id) {
       const action = form.getAttribute("action");
 
-      let title, currentChapter, maxChapter, description, _csrf;
+      let title, currentChapter, maxChapter, description, _csrf, imageUrl;
 
       title = form.querySelector(".title");
       currentChapter = form.querySelector(".currentChapter");
       maxChapter = form.querySelector(".maxChapter");
       description = form.querySelector(".synopsis");
       _csrf = form.querySelector("input[type='hidden']");
-      let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}`;
+      imageUrl = form.parentElement.parentElement
+        .querySelector("img")
+        .getAttribute("src");
+      let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}&imageUrl=${imageUrl}`;
       console.log(formData);
       sendAjax("POST", action, formData, (result) => {
         mangaList.push(result[0]);
@@ -109,25 +99,7 @@ const sendPost = (e, postForms) => {
 
   return false;
 };
-//sends get requests
-const sendGet = (e, getForm) => {
-  e.preventDefault();
 
-  const action = getForm.getAttribute("action");
-  const method = getForm.getAttribute("method");
-
-  const xhr = new XMLHttpRequest();
-  xhr.open(method, action);
-
-  xhr.onload = () => this.handleResponse(xhr, true);
-
-  xhr.setRequestHeader("Accept", "application/json");
-  xhr.send();
-
-  e.preventDefault();
-
-  return false;
-};
 //sends put requests
 const sendPut = (e, updateForms) => {
   e.preventDefault();
@@ -135,35 +107,27 @@ const sendPut = (e, updateForms) => {
   for (let form of updateForms) {
     if (e.target.form.id === form.id) {
       const action = form.getAttribute("action");
-      const method = form.getAttribute("method");
 
-      let title, currentChapter, maxChapter, description;
+      let title, currentChapter, maxChapter, description, _csrf, imageUrl;
 
       title = form.querySelector(".title");
       currentChapter = form.querySelector(".currentChapter");
       maxChapter = form.querySelector(".maxChapter");
       description = form.querySelector(".description");
-
-      console.log(title);
-      console.log(currentChapter);
-      console.log(maxChapter);
-      console.log(description);
-
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, action);
-
-      xhr.setRequestHeader("Accept", "application/json");
-      xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-      xhr.onload = () => this.handleResponse(xhr, false);
-      const formData = `title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.textContent}`;
-
-      xhr.send(formData);
+      _csrf = form.querySelector("input[type='hidden']");
+      imageUrl = form.parentElement.parentElement
+        .querySelector("img")
+        .getAttribute("src");
+      let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.value}&imageUrl=${imageUrl}`;
+      console.log(formData);
+      sendAjax("POST", action, formData, (result) => {
+        mangaList.push(result[0]);
+      });
 
       e.preventDefault();
     }
   }
-
+  loadMangaFromServer();
   return false;
 };
 
@@ -322,15 +286,16 @@ const TrackedMangaList = function (props) {
       </div>
     );
   }
-  console.log(props.manga[0]._id);
+
   const mangaNodes = props.manga.map(function (manga) {
+    console.log(`${manga._id}`);
     return (
       <section className="trackedCard">
         <div className="box">
           <article className="media">
             <div className="media-left">
               <figure className="image">
-                <img src={manga.image_url} alt={manga.title} />
+                <img src={manga.imageUrl} alt={manga.title} />
               </figure>
             </div>
             <div className="media-content">
@@ -342,15 +307,16 @@ const TrackedMangaList = function (props) {
                   type="number"
                   min="1"
                   max="9999"
-                  value={manga.currentChapter}
+                  defaultValue={manga.currentChapter}
                   className="input currentChapter"
+                  
                 />
                 <label className="label">Max Chapter:</label>
                 <input
                   type="number"
                   min="1"
                   max="9999"
-                  value={manga.maxChapter}
+                  defaultValue={manga.maxChapter}
                   className="input maxChapter"
                 />
                 <label className="label">Description:</label>
@@ -366,7 +332,10 @@ const TrackedMangaList = function (props) {
                   Update
                 </button>
               </form>
-              <button className="button" onClick={deleteCard.bind(manga.title)}>
+              <button
+                className="button"
+                onClick={deleteCard.bind(event, `${manga._id}`)}
+              >
                 Delete
               </button>
             </div>

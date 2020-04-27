@@ -1,7 +1,5 @@
 "use strict";
 
-var _this = void 0;
-
 function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
@@ -49,9 +47,11 @@ var addManga = function addManga(e) {
 }; //deletes cards from datamodel and view
 
 
-var deleteCard = function deleteCard(id) {
+var deleteCard = function deleteCard(e, id) {
   // let updateForms = document.querySelectorAll('.updateForms');
-  deleteManga(id);
+  console.log(e);
+  console.log(id);
+  deleteManga(e);
 }; //updates mangaList on server
 
 
@@ -62,30 +62,10 @@ var deleteManga = function deleteManga(id) {
   // }
   // _csrf = form.querySelector("input[type='hidden']");
   var formData = "_csrf=".concat(csrfToken, "&id=").concat(id);
-  sendAjax('POST', '/deleteManga', formData, null);
-}; //updates view
-
-
-var forceUpdateList = function forceUpdateList() {
-  forceUpdate();
-}; //parses incoming json from requests
-
-
-var parseJSON = function parseJSON(xhr, content) {
-  var obj = JSON.parse(xhr.response);
-
-  if (xhr.response) {
-    _this.mangaList = obj;
-  }
-}; //handles if json needs parsing
-
-
-var handleResponse = function handleResponse(xhr, parse) {
-  var content = document.querySelector("#content");
-
-  if (parse) {
-    _this.parseJSON(xhr, content);
-  }
+  sendAjax("POST", "/deleteManga", formData, function () {
+    console.log("succesful deletion");
+    loadMangaFromServer();
+  });
 }; //sends post requests
 
 
@@ -106,14 +86,16 @@ var sendPost = function sendPost(e, postForms) {
             currentChapter = void 0,
             maxChapter = void 0,
             description = void 0,
-            _csrf = void 0;
+            _csrf = void 0,
+            imageUrl = void 0;
 
         title = form.querySelector(".title");
         currentChapter = form.querySelector(".currentChapter");
         maxChapter = form.querySelector(".maxChapter");
         description = form.querySelector(".synopsis");
         _csrf = form.querySelector("input[type='hidden']");
-        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value);
+        imageUrl = form.parentElement.parentElement.querySelector("img").getAttribute("src");
+        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
         console.log(formData);
         sendAjax("POST", action, formData, function (result) {
           mangaList.push(result[0]);
@@ -127,24 +109,6 @@ var sendPost = function sendPost(e, postForms) {
     _iterator.f();
   }
 
-  return false;
-}; //sends get requests
-
-
-var sendGet = function sendGet(e, getForm) {
-  e.preventDefault();
-  var action = getForm.getAttribute("action");
-  var method = getForm.getAttribute("method");
-  var xhr = new XMLHttpRequest();
-  xhr.open(method, action);
-
-  xhr.onload = function () {
-    return _this.handleResponse(xhr, true);
-  };
-
-  xhr.setRequestHeader("Accept", "application/json");
-  xhr.send();
-  e.preventDefault();
   return false;
 }; //sends put requests
 
@@ -160,34 +124,27 @@ var sendPut = function sendPut(e, updateForms) {
       var form = _step2.value;
 
       if (e.target.form.id === form.id) {
-        (function () {
-          var action = form.getAttribute("action");
-          var method = form.getAttribute("method");
-          var title = void 0,
-              currentChapter = void 0,
-              maxChapter = void 0,
-              description = void 0;
-          title = form.querySelector(".title");
-          currentChapter = form.querySelector(".currentChapter");
-          maxChapter = form.querySelector(".maxChapter");
-          description = form.querySelector(".description");
-          console.log(title);
-          console.log(currentChapter);
-          console.log(maxChapter);
-          console.log(description);
-          var xhr = new XMLHttpRequest();
-          xhr.open(method, action);
-          xhr.setRequestHeader("Accept", "application/json");
-          xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        var action = form.getAttribute("action");
 
-          xhr.onload = function () {
-            return _this.handleResponse(xhr, false);
-          };
+        var title = void 0,
+            currentChapter = void 0,
+            maxChapter = void 0,
+            description = void 0,
+            _csrf = void 0,
+            imageUrl = void 0;
 
-          var formData = "title=".concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.textContent);
-          xhr.send(formData);
-          e.preventDefault();
-        })();
+        title = form.querySelector(".title");
+        currentChapter = form.querySelector(".currentChapter");
+        maxChapter = form.querySelector(".maxChapter");
+        description = form.querySelector(".description");
+        _csrf = form.querySelector("input[type='hidden']");
+        imageUrl = form.parentElement.parentElement.querySelector("img").getAttribute("src");
+        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
+        console.log(formData);
+        sendAjax("POST", action, formData, function (result) {
+          mangaList.push(result[0]);
+        });
+        e.preventDefault();
       }
     }
   } catch (err) {
@@ -196,6 +153,7 @@ var sendPut = function sendPut(e, updateForms) {
     _iterator2.f();
   }
 
+  loadMangaFromServer();
   return false;
 };
 
@@ -343,8 +301,8 @@ var TrackedMangaList = function TrackedMangaList(props) {
     }, "No Manga yet"));
   }
 
-  console.log(props.manga[0]._id);
   var mangaNodes = props.manga.map(function (manga) {
+    console.log("".concat(manga._id));
     return /*#__PURE__*/React.createElement("section", {
       className: "trackedCard"
     }, /*#__PURE__*/React.createElement("div", {
@@ -356,7 +314,7 @@ var TrackedMangaList = function TrackedMangaList(props) {
     }, /*#__PURE__*/React.createElement("figure", {
       className: "image"
     }, /*#__PURE__*/React.createElement("img", {
-      src: manga.image_url,
+      src: manga.imageUrl,
       alt: manga.title
     }))), /*#__PURE__*/React.createElement("div", {
       className: "media-content"
@@ -374,7 +332,7 @@ var TrackedMangaList = function TrackedMangaList(props) {
       type: "number",
       min: "1",
       max: "9999",
-      value: manga.currentChapter,
+      defaultValue: manga.currentChapter,
       className: "input currentChapter"
     }), /*#__PURE__*/React.createElement("label", {
       className: "label"
@@ -382,7 +340,7 @@ var TrackedMangaList = function TrackedMangaList(props) {
       type: "number",
       min: "1",
       max: "9999",
-      value: manga.maxChapter,
+      defaultValue: manga.maxChapter,
       className: "input maxChapter"
     }), /*#__PURE__*/React.createElement("label", {
       className: "label"
@@ -398,7 +356,7 @@ var TrackedMangaList = function TrackedMangaList(props) {
       type: "submit"
     }, "Update")), /*#__PURE__*/React.createElement("button", {
       className: "button",
-      onClick: deleteCard.bind(manga.title)
+      onClick: deleteCard.bind(event, "".concat(manga._id))
     }, "Delete")))));
   });
   return /*#__PURE__*/React.createElement("div", {

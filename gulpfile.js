@@ -15,7 +15,7 @@ const sassTask = (done) => {
 };
 
 const jsTask = (done) => {
-    gulp.src(['./client/login/client.js','./client/app/tracker.js'])
+    gulp.src(['./client/login/client.js','./client/app/tracker.js', './client/reset/reset.js'])
     .pipe(cache('babel'))
     .pipe(babel({
         presets: ['@babel/preset-env', '@babel/preset-react']
