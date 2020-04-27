@@ -1,18 +1,18 @@
-const models = require("../models");
+const models = require('../models');
 
 const { Account } = models;
 
 const loginPage = (req, res) => {
-  res.render("login", { csrfToken: req.csrfToken() });
+  res.render('login', { csrfToken: req.csrfToken() });
 };
 
 const resetPage = (req, res) => {
-  res.render("reset", { csrfToken: req.csrfToken() });
+  res.render('reset', { csrfToken: req.csrfToken() });
 };
 
 const logout = (req, res) => {
   req.session.destroy();
-  res.redirect("/");
+  res.redirect('/');
 };
 
 const login = (req, res) => {
@@ -20,7 +20,7 @@ const login = (req, res) => {
   const password = `${req.body.pass}`;
 
   if (!username || !password) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.status(400).json({ error: 'All fields are required' });
   }
 
   return Account.AccountModel.authenticate(
@@ -28,13 +28,13 @@ const login = (req, res) => {
     password,
     (err, account) => {
       if (err || !account) {
-        return res.status(400).json({ error: "Wrong username or password" });
+        return res.status(400).json({ error: 'Wrong username or password' });
       }
 
       req.session.account = Account.AccountModel.toAPI(account);
 
-      return res.json({ redirect: "/tracker" });
-    }
+      return res.json({ redirect: '/tracker' });
+    },
   );
 };
 
@@ -44,11 +44,11 @@ const signup = (req, res) => {
   req.body.pass2 = `${req.body.pass2}`;
 
   if (!req.body.username || !req.body.pass || !req.body.pass2) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.status(400).json({ error: 'All fields are required' });
   }
 
   if (req.body.pass !== req.body.pass2) {
-    return res.status(400).json({ error: "Passwords do not match" });
+    return res.status(400).json({ error: 'Passwords do not match' });
   }
 
   return Account.AccountModel.generateHash(req.body.pass, (salt, hash) => {
@@ -64,17 +64,17 @@ const signup = (req, res) => {
 
     savePromise.then(() => {
       req.session.account = Account.AccountModel.toAPI(newAccount);
-      return res.json({ redirect: "/tracker" });
+      return res.json({ redirect: '/tracker' });
     });
 
     savePromise.catch((err) => {
       console.log(err);
 
       if (err.code === 11000) {
-        return res.status(400).json({ error: "Username already in use." });
+        return res.status(400).json({ error: 'Username already in use.' });
       }
 
-      return res.status(400).json({ error: "An error occurred" });
+      return res.status(400).json({ error: 'An error occurred' });
     });
   });
 };
@@ -86,16 +86,16 @@ const updatePassword = (req, res) => {
   req.body.pass2 = `${req.body.pass2}`;
 
   if (
-    !req.body.username ||
-    !req.body.oldPass ||
-    !req.body.pass ||
-    !req.body.pass2
+    !req.body.username
+    || !req.body.oldPass
+    || !req.body.pass
+    || !req.body.pass2
   ) {
-    return res.status(400).json({ error: "All fields are required" });
+    return res.status(400).json({ error: 'All fields are required' });
   }
 
   if (req.body.pass !== req.body.pass2) {
-    return res.status(400).json({ error: "Passwords do not match" });
+    return res.status(400).json({ error: 'Passwords do not match' });
   }
 
   return Account.AccountModel.authenticate(
@@ -103,7 +103,7 @@ const updatePassword = (req, res) => {
     req.body.oldPass,
     (err, account) => {
       if (err || !account) {
-        return res.status(400).json({ error: "Wrong username or password" });
+        return res.status(400).json({ error: 'Wrong username or password' });
       }
 
       req.session.account = Account.AccountModel.toAPI(account);
@@ -118,7 +118,7 @@ const updatePassword = (req, res) => {
 
         savePromise.then(() => {
           req.session.account = Account.AccountModel.toAPI(account);
-          return res.json({ redirect: "/tracker" });
+          return res.json({ redirect: '/tracker' });
         });
 
         savePromise.catch((error) => {
@@ -128,10 +128,10 @@ const updatePassword = (req, res) => {
           //   return res.status(400).json({ error: 'Username already in use.' });
           // }
 
-          return res.status(400).json({ error: "An error occurred" });
+          return res.status(400).json({ error: 'An error occurred' });
         });
       });
-    }
+    },
   );
 };
 

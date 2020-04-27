@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const models = require("../models");
+const mongoose = require('mongoose');
+const models = require('../models');
 
 const { Manga } = models;
 
@@ -7,7 +7,7 @@ const getManga = (req, res) => {
   Manga.MangaModel.findByOwner(req.session.account._id, (err, docs) => {
     if (err) {
       console.log(err);
-      return res.status(400).json({ error: "an error occurred" });
+      return res.status(400).json({ error: 'an error occurred' });
     }
     return res.json({ manga: docs });
   });
@@ -16,26 +16,27 @@ const getManga = (req, res) => {
 const deleteManga = (req, res) => {
   console.log(req.body);
   if (!mongoose.Types.ObjectId.isValid(`${req.body.id}`)) {
-    console.log("invalid id");
-    return res.json({ message: "invalid id" });
+    console.log('invalid id');
+    return res.json({ message: 'invalid id' });
   }
   Manga.MangaModel.deleteOne(
     { _id: mongoose.Types.ObjectId.createFromHexString(`${req.body.id}`) },
     (err) => {
       if (err) {
         console.log(err);
-        return res.status(400).json({ error: "an error ocuurred" });
+        return res.status(400).json({ error: 'an error ocuurred' });
       }
-      return res.json({ message: "successful deletion" });
-    }
+      return res.json({ message: 'successful deletion' });
+    },
   );
+  return false;
 };
 
 const addManga = (req, res) => {
   if (!req.body.title || !req.body.currentChapter) {
     return res
       .status(400)
-      .json({ error: "current chapter needs to be added." });
+      .json({ error: 'current chapter needs to be added.' });
   }
 
   const mangaData = {
@@ -56,10 +57,10 @@ const addManga = (req, res) => {
   mangaPromise.catch((err) => {
     console.log(err);
     if (err.code === 11000) {
-      return res.status(400).json({ error: "manga already added" });
+      return res.status(400).json({ error: 'manga already added' });
     }
 
-    return res.status(400).json({ error: "an error occurred" });
+    return res.status(400).json({ error: 'an error occurred' });
   });
 
   return mangaPromise;
@@ -69,7 +70,7 @@ const updateManga = (req, res) => {
   if (!req.body.title || !req.body.currentChapter || !req.body.maxChapter) {
     return res
       .status(400)
-      .json({ error: "current chapter needs to be added." });
+      .json({ error: 'current chapter needs to be added.' });
   }
 
   const mangaData = {
@@ -95,25 +96,25 @@ const updateManga = (req, res) => {
 
       mangaPromise.then(() => {
         // manga = Manga.MangaModel.toAPI(manga);
-        res.json({ redirect: "/tracker" });
+        res.json({ redirect: '/tracker' });
       });
 
-      mangaPromise.catch((err) => {
-        console.log(err);
+      mangaPromise.catch((error) => {
+        console.log(error);
         // if (err.code === 11000) {
         //   return res.status(400).json({ error: "manga already added" });
         // }
 
-        return res.status(400).json({ error: "an error occurred" });
+        return res.status(400).json({ error: 'an error occurred' });
       });
-    }
+      return false;
+    },
   );
 
   return mangaPromise;
 };
 
-const trackerPage = (req, res) =>
-  res.render("app", { csrfToken: req.csrfToken() });
+const trackerPage = (req, res) => res.render('app', { csrfToken: req.csrfToken() });
 
 module.exports.trackerPage = trackerPage;
 module.exports.getManga = getManga;
