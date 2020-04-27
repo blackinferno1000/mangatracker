@@ -1,22 +1,10 @@
 //fields
-let searching = true;
 let mangaList = [];
 let searchQuery = "";
-let filters = {};
-let genres = {};
-let searching = true;
-let searchResults = {};
-
-//toggle view
-const getResultSection = (e) => {
-  searching = true;
-};
-
-//toggle view
-const getTrackedSection = (e) => {
-  searching = false;
-  getManga(e);
-};
+// let filters = {};
+// let genres = {};
+let searchResults = [];
+let csrfToken;
 
 //event listener to send get requests
 const getManga = (e) => {
@@ -27,14 +15,18 @@ const getManga = (e) => {
 //searches for manga in jikan API
 const searchManga = () => {
   fetch(
-    `https://api.jikan.moe/v3/search/manga?q=${this.searchQuery}&page=1&limit=10&type=Manga`
+    `https://api.jikan.moe/v3/search/manga?q=${searchQuery}&page=1&limit=10&type=Manga`
   )
     .then((res) => {
       return res.json();
     })
     .then((data) => {
       console.log(data);
-      searchResults = data;
+      searchResults = data.results;
+      ReactDOM.render(
+        <AddMangaList manga={searchResults} />,
+        document.querySelector("#addDiv")
+      );
     });
 };
 
@@ -54,22 +46,21 @@ const addManga = (e) => {
 
 //deletes cards from datamodel and view
 const deleteCard = (id) => {
-  delete mangaList.mangaList[id];
+  // let updateForms = document.querySelectorAll('.updateForms');
   deleteManga(id);
-  forceUpdate();
 };
+
 //updates mangaList on server
 const deleteManga = (id) => {
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", "/deleteManga");
-
-  xhr.setRequestHeader("Accept", "application/json");
-  xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-  xhr.onload = () => handleResponse(xhr, false);
-  const formData = `title=${id}`;
-
-  xhr.send(formData);
+  // for (let form of updateForms) {
+  //   if (e.target.form.id === form.id) {
+      
+  //   }
+  // }
+    
+  // _csrf = form.querySelector("input[type='hidden']");
+  const formData = `_csrf=${csrfToken}&id=${id}`;
+  sendAjax('POST', '/deleteManga', formData, null);
 };
 //updates view
 const forceUpdateList = () => {
@@ -95,35 +86,21 @@ const handleResponse = (xhr, parse) => {
 const sendPost = (e, postForms) => {
   e.preventDefault();
 
-//   if ($("#user").val() == "" || $("#pass").val() == "") {
-//     handleError("Username or password is empty");
-//     return false;
-//   }
- 
   for (let form of postForms) {
     if (e.target.form.id === form.id) {
-      const method = form.getAttribute("method");
+      const action = form.getAttribute("action");
 
-      let title, currentChapter, maxChapter, description;
+      let title, currentChapter, maxChapter, description, _csrf;
 
       title = form.querySelector(".title");
       currentChapter = form.querySelector(".currentChapter");
       maxChapter = form.querySelector(".maxChapter");
       description = form.querySelector(".synopsis");
-
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, action);
-
-      xhr.setRequestHeader("Accept", "application/json");
-      xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-      xhr.onload = () => this.handleResponse(xhr, false);
-      let formData = `title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}`;
-
-      xhr.send(formData);
-
-      sendAjax("POST", method, null, (result) => {
-        setup(result.csrfToken);
+      _csrf = form.querySelector("input[type='hidden']");
+      let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}`;
+      console.log(formData);
+      sendAjax("POST", action, formData, (result) => {
+        mangaList.push(result[0]);
       });
 
       e.preventDefault();
@@ -193,16 +170,24 @@ const sendPut = (e, updateForms) => {
 const SearchBar = (props) => {
   return (
     <section>
-      <h1 class="is-size-1">MangaTracker</h1>
-      <h5 class="is-size-3">Search for a manga and track your progress.</h5>
+      <h1 className="is-size-1">MangaTracker</h1>
+      <h5 className="is-size-3">Search for a manga and track your progress.</h5>
       <input
         type="search"
         name="searchbar"
         id="searchbar"
         placeholder="Search Manga"
-        class="input"
+        className="input"
+        onChange={(e) => {
+          searchQuery = e.target.value;
+        }}
       />
-      <input type="submit" value="Search" class="input" />
+      <input
+        onClick={searchManga}
+        type="submit"
+        value="Search"
+        className="input"
+      />
     </section>
   );
 };
@@ -211,11 +196,32 @@ const Controls = (props) => {
   return (
     <section>
       <form id="getForm" action="/getManga" method="GET">
-        <div class="box">
-          <button onClick={getResultSection} type="button" class="button">
+        <div className="box">
+          <button
+            onClick={() => {
+              ReactDOM.render(
+                <AddSection csrf={csrfToken} />,
+                document.querySelector("#content")
+              );
+            }}
+            type="button"
+            className="button"
+            id="resultButton"
+          >
             Results
           </button>
-          <button onClick={getTrackedSection} type="button" class="button">
+          <button
+            onClick={() => {
+              ReactDOM.render(
+                <TrackedSection csrf={csrfToken} />,
+                document.querySelector("#content")
+              );
+              loadMangaFromServer();
+            }}
+            type="button"
+            className="button"
+            id="trackButton"
+          >
             Tracked
           </button>
         </div>
@@ -227,9 +233,8 @@ const Controls = (props) => {
 const AddSection = (props) => {
   return (
     <section id="addSection">
-      <div id="addDiv">
-        <h1 class="is-size-3">Add a manga:</h1>
-      </div>
+      <h1 className="is-size-3">Add a manga:</h1>
+      <div id="addDiv"></div>
     </section>
   );
 };
@@ -237,9 +242,8 @@ const AddSection = (props) => {
 const TrackedSection = (props) => {
   return (
     <section>
-      <div id="trackedScrollWrap">
-        <h1 class="is-size-3">Tracked Manga:</h1>
-      </div>
+      <h1 className="is-size-3">Tracked Manga:</h1>
+      <div id="trackedScrollWrap"></div>
     </section>
   );
 };
@@ -253,25 +257,25 @@ const AddMangaList = function (props) {
     );
   }
 
-  const mangaNodes = props.manga.map(function (manga) {
+  const mangaNodes = props.manga.map(function (result) {
     return (
-      <section class="resultCard">
-        <div class="box">
-          <article class="media">
-            <div class="media-left">
-              <figure class="image">
+      <section className="resultCard">
+        <div className="box">
+          <article className="media">
+            <div className="media-left">
+              <figure className="image">
                 <img src={result.image_url} alt={result.title} />
               </figure>
             </div>
-            <div class="media-content">
+            <div className="media-content">
               <form
                 id={result.title.replace(/\s/g, "")}
-                class="addForm"
+                className="addForm"
                 action="/addManga"
                 method="POST"
               >
-                <h1 class="title">{result.title}</h1>
-                <label class="label" for="currentChapter">
+                <h1 className="title">{result.title}</h1>
+                <label className="label" for="currentChapter">
                   Current Chapter
                 </label>
                 <input
@@ -279,17 +283,24 @@ const AddMangaList = function (props) {
                   name="currentChapter"
                   min="1"
                   max="9999"
-                  class="input currentChapter"
+                  className="input currentChapter"
                 />
-                <label class="label" for="maxChapter">
+                <label className="label" for="maxChapter">
                   Max Chapters(can be adjusted later)
                 </label>
-                <p class="maxChapter">{result.chapters}</p>
-                <label class="label" for="synopsis">
+                <p className="maxChapter">{result.chapters}</p>
+                <label className="label" for="synopsis">
                   Synopsis
                 </label>
-                <textarea class="textarea synopsis">{result.synopsis}</textarea>
-                <button class="button" onClick={addManga($event)} type="submit">
+                <textarea className="textarea synopsis">
+                  {result.synopsis}
+                </textarea>
+                <input type="hidden" name="_csrf" value={csrfToken} />
+                <button
+                  className="button"
+                  onClick={addManga.bind(event)}
+                  type="submit"
+                >
                   Add
                 </button>
               </form>
@@ -311,52 +322,51 @@ const TrackedMangaList = function (props) {
       </div>
     );
   }
-
+  console.log(props.manga[0]._id);
   const mangaNodes = props.manga.map(function (manga) {
     return (
-      <section class="trackedCard">
-        <div class="box">
-          <article class="media">
-            <div class="media-left">
-              <figure class="image">
+      <section className="trackedCard">
+        <div className="box">
+          <article className="media">
+            <div className="media-left">
+              <figure className="image">
                 <img src={manga.image_url} alt={manga.title} />
               </figure>
             </div>
-            <div class="media-content">
-              <form class="updateForm" action="/updateManga" method="PUT">
-                <label class="label">Title:</label>
-                <h1 class="title">{manga.title}</h1>
-                <label class="label">Current Chapter:</label>
+            <div className="media-content">
+              <form className="updateForm" action="/updateManga" method="PUT">
+                <label className="label">Title:</label>
+                <h1 className="title">{manga.title}</h1>
+                <label className="label">Current Chapter:</label>
                 <input
-                  class="currentChapter"
                   type="number"
                   min="1"
                   max="9999"
                   value={manga.currentChapter}
-                  class="input currentChapter"
+                  className="input currentChapter"
                 />
-                <label class="label">Max Chapter:</label>
+                <label className="label">Max Chapter:</label>
                 <input
-                  class="maxChapter"
                   type="number"
                   min="1"
                   max="9999"
                   value={manga.maxChapter}
-                  class="input maxChapter"
+                  className="input maxChapter"
                 />
-                <label class="label">Description:</label>
-                <textarea class="description textarea">
+                <label className="label">Description:</label>
+                <textarea className="description textarea">
                   {manga.description}
                 </textarea>
+                <input type="hidden" name="_csrf" value={csrfToken} />
                 <button
-                  class="button"
-                  onClick={updateManga($event)}
+                  className="button"
+                  onClick={updateManga.bind(event)}
                   type="submit"
                 >
                   Update
                 </button>
               </form>
-              <button class="button" onClick={deleteCard(manga.title)}>
+              <button className="button" onClick={deleteCard.bind(manga.title)}>
                 Delete
               </button>
             </div>
@@ -371,14 +381,17 @@ const TrackedMangaList = function (props) {
 
 const loadMangaFromServer = () => {
   sendAjax("GET", "/getManga", null, (data) => {
+    console.log(data);
     ReactDOM.render(
-      <AddMangaList manga={data.manga} />,
-      document.querySelector("#content")
+      <TrackedMangaList manga={data.manga} />,
+      document.querySelector("#trackedScrollWrap")
     );
   });
 };
 
 const setup = function (csrf) {
+  csrfToken = csrf;
+
   ReactDOM.render(<SearchBar csrf={csrf} />, document.querySelector("#search"));
 
   ReactDOM.render(
@@ -386,24 +399,17 @@ const setup = function (csrf) {
     document.querySelector("#controls")
   );
 
-  if (searching) {
-    ReactDOM.render(
-      <AddSection csrf={csrf} />,
-      document.querySelector("#content")
-    );
-  } else {
-    ReactDOM.render(
-      <TrackedSection csrf={csrf} />,
-      document.querySelector("#content")
-    );
-  }
-
   ReactDOM.render(
-    <AddMangaList manga={[]} csrf={csrf} />,
-    document.querySelector("#addDiv")
+    <AddSection csrf={csrf} />,
+    document.querySelector("#content")
   );
 
-  loadMangaFromServer();
+  // ReactDOM.render(
+  //   <AddMangaList manga={searchResults} csrf={csrf} />,
+  //   document.querySelector("#addDiv")
+  // );
+
+  // loadMangaFromServer();
 };
 
 const getToken = () => {

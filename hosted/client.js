@@ -3,20 +3,20 @@
 var handleLogin = function handleLogin(e) {
   e.preventDefault();
 
-  if ($("#user").val() == '' || $("#pass").val() == '') {
+  if ($("#user").val() == "" || $("#pass").val() == "") {
     handleError("Username or password is empty");
     return false;
   }
 
   console.log($("input[name=_csrf]").val());
-  sendAjax('POST', $("#loginForm").attr('action'), $("#loginForm").serialize(), redirect);
+  sendAjax("POST", $("#loginForm").attr("action"), $("#loginForm").serialize(), redirect);
   return false;
 };
 
 var handleSignup = function handleSignup(e) {
   e.preventDefault();
 
-  if ($("#user").val() == '' || $("#pass").val() == '' || $("#pass2").val() == '') {
+  if ($("#user").val() == "" || $("#pass").val() == "" || $("#pass2").val() == "") {
     handleError("All fields are required");
     return false;
   }
@@ -26,7 +26,7 @@ var handleSignup = function handleSignup(e) {
     return false;
   }
 
-  sendAjax('POST', $("#signupForm").attr('action'), $("#signupForm").serialize(), redirect);
+  sendAjax("POST", $("#signupForm").attr("action"), $("#signupForm").serialize(), redirect);
   return false;
 };
 
@@ -130,7 +130,7 @@ var setup = function setup(csrf) {
 };
 
 var getToken = function getToken() {
-  sendAjax('GET', '/getToken', null, function (result) {
+  sendAjax("GET", "/getToken", null, function (result) {
     setup(result.csrfToken);
   });
 };

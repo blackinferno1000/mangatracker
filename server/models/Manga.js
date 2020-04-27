@@ -6,8 +6,8 @@ const _ = require('underscore');
 let MangaModel = {};
 
 const convertId = mongoose.Types.ObjectId;
-const setTitle = (name) => _.escape(name).trim();
-const setDescription = (personality) => _.escape(personality).trim();
+const setTitle = (title) => _.escape(title).trim();
+const setDescription = (description) => _.escape(description).trim();
 
 const MangaSchema = new mongoose.Schema({
   title: {
@@ -42,14 +42,14 @@ const MangaSchema = new mongoose.Schema({
   createdData: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
 MangaSchema.statics.toAPI = (doc) => ({
   title: doc.title,
   currentChapter: doc.currentChapter,
   maxChapter: doc.maxChapter,
-  description: doc.description
+  description: doc.description,
 });
 
 MangaSchema.statics.findByOwner = (ownerId, callback) => {

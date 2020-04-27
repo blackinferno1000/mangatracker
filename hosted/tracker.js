@@ -2,203 +2,222 @@
 
 var _this = void 0;
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function _createForOfIteratorHelper(o) { if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (o = _unsupportedIterableToArray(o))) { var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var it, normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
-var searching = true; //toggle view
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
-var getResultSection = function getResultSection(e) {
-  _this.searching = true;
-}; //toggle view
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+//fields
+var mangaList = [];
+var searchQuery = ""; // let filters = {};
+// let genres = {};
+
+var searchResults = [];
+var csrfToken; //event listener to send get requests
+
+var getManga = function getManga(e) {
+  var getForm = document.querySelector("#getForm");
+  sendGet(e, getForm);
+}; //searches for manga in jikan API
 
 
-var getTrackedSection = function getTrackedSection(e) {
-  _this.searching = false;
+var searchManga = function searchManga() {
+  fetch("https://api.jikan.moe/v3/search/manga?q=".concat(searchQuery, "&page=1&limit=10&type=Manga")).then(function (res) {
+    return res.json();
+  }).then(function (data) {
+    console.log(data);
+    searchResults = data.results;
+    ReactDOM.render( /*#__PURE__*/React.createElement(AddMangaList, {
+      manga: searchResults
+    }), document.querySelector("#addDiv"));
+  });
+}; //updates manga
 
-  _this.getManga(e);
-};
-/*
-    ,
-    ,
-    //parses incoming json from requests
-    parseJSON(xhr, content) {
-      const obj = JSON.parse(xhr.response);
 
-      if (xhr.response) {
-        this.mangaList = obj;
+var updateManga = function updateManga(e) {
+  var updateForms = document.querySelectorAll(".updateForm");
+  console.log(updateForms);
+  sendPut(e, updateForms);
+}; //event listener to send post requests
+
+
+var addManga = function addManga(e) {
+  var addForms = document.querySelectorAll(".addForm");
+  console.log(addForms);
+  sendPost(e, addForms);
+}; //deletes cards from datamodel and view
+
+
+var deleteCard = function deleteCard(id) {
+  // let updateForms = document.querySelectorAll('.updateForms');
+  deleteManga(id);
+}; //updates mangaList on server
+
+
+var deleteManga = function deleteManga(id) {
+  // for (let form of updateForms) {
+  //   if (e.target.form.id === form.id) {
+  //   }
+  // }
+  // _csrf = form.querySelector("input[type='hidden']");
+  var formData = "_csrf=".concat(csrfToken, "&id=").concat(id);
+  sendAjax('POST', '/deleteManga', formData, null);
+}; //updates view
+
+
+var forceUpdateList = function forceUpdateList() {
+  forceUpdate();
+}; //parses incoming json from requests
+
+
+var parseJSON = function parseJSON(xhr, content) {
+  var obj = JSON.parse(xhr.response);
+
+  if (xhr.response) {
+    _this.mangaList = obj;
+  }
+}; //handles if json needs parsing
+
+
+var handleResponse = function handleResponse(xhr, parse) {
+  var content = document.querySelector("#content");
+
+  if (parse) {
+    _this.parseJSON(xhr, content);
+  }
+}; //sends post requests
+
+
+var sendPost = function sendPost(e, postForms) {
+  e.preventDefault();
+
+  var _iterator = _createForOfIteratorHelper(postForms),
+      _step;
+
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var form = _step.value;
+
+      if (e.target.form.id === form.id) {
+        var action = form.getAttribute("action");
+
+        var title = void 0,
+            currentChapter = void 0,
+            maxChapter = void 0,
+            description = void 0,
+            _csrf = void 0;
+
+        title = form.querySelector(".title");
+        currentChapter = form.querySelector(".currentChapter");
+        maxChapter = form.querySelector(".maxChapter");
+        description = form.querySelector(".synopsis");
+        _csrf = form.querySelector("input[type='hidden']");
+        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value);
+        console.log(formData);
+        sendAjax("POST", action, formData, function (result) {
+          mangaList.push(result[0]);
+        });
+        e.preventDefault();
       }
-    },
-    //handles if json needs parsing
-    handleResponse(xhr, parse) {
-      const content = document.querySelector("#content");
-      if (parse) {
-        this.parseJSON(xhr, content);
-      }
-    },
-    //sends post requests
-    sendPost(e, postForms) {
-      e.preventDefault();
-      for (let form of postForms) {
-        if (e.target.form.id === form.id) {
-          const action = form.getAttribute("action");
-          const method = form.getAttribute("method");
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
 
-          let title, currentChapter, maxChapter, description;
+  return false;
+}; //sends get requests
 
-          title = form.querySelector(".title");
-          currentChapter = form.querySelector(".currentChapter");
-          maxChapter = form.querySelector(".maxChapter");
-          description = form.querySelector(".synopsis");
 
-          const xhr = new XMLHttpRequest();
-          xhr.open(method, action);
+var sendGet = function sendGet(e, getForm) {
+  e.preventDefault();
+  var action = getForm.getAttribute("action");
+  var method = getForm.getAttribute("method");
+  var xhr = new XMLHttpRequest();
+  xhr.open(method, action);
 
-          xhr.setRequestHeader("Accept", "application/json");
-          xhr.setRequestHeader(
-            "Content-type",
-            "application/x-www-form-urlencoded"
-          );
+  xhr.onload = function () {
+    return _this.handleResponse(xhr, true);
+  };
 
-          xhr.onload = () => this.handleResponse(xhr, false);
-          let formData = `title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}`;
+  xhr.setRequestHeader("Accept", "application/json");
+  xhr.send();
+  e.preventDefault();
+  return false;
+}; //sends put requests
 
-          xhr.send(formData);
 
-          e.preventDefault();
-        }
-      }
+var sendPut = function sendPut(e, updateForms) {
+  e.preventDefault();
 
-      return false;
-    },
-    //sends get requests
-    sendGet(e, getForm) {
-      e.preventDefault();
+  var _iterator2 = _createForOfIteratorHelper(updateForms),
+      _step2;
 
-      const action = getForm.getAttribute("action");
-      const method = getForm.getAttribute("method");
+  try {
+    for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+      var form = _step2.value;
 
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, action);
-
-      xhr.onload = () => this.handleResponse(xhr, true);
-
-      xhr.setRequestHeader("Accept", "application/json");
-      xhr.send();
-
-      e.preventDefault();
-
-      return false;
-    },
-    //sends put requests
-    sendPut(e, updateForms) {
-      e.preventDefault();
-
-      for (let form of updateForms) {
-        if (e.target.form.id === form.id) {
-          const action = form.getAttribute("action");
-          const method = form.getAttribute("method");
-
-          let title, currentChapter, maxChapter, description;
-
+      if (e.target.form.id === form.id) {
+        (function () {
+          var action = form.getAttribute("action");
+          var method = form.getAttribute("method");
+          var title = void 0,
+              currentChapter = void 0,
+              maxChapter = void 0,
+              description = void 0;
           title = form.querySelector(".title");
           currentChapter = form.querySelector(".currentChapter");
           maxChapter = form.querySelector(".maxChapter");
           description = form.querySelector(".description");
-
           console.log(title);
           console.log(currentChapter);
           console.log(maxChapter);
           console.log(description);
-
-          const xhr = new XMLHttpRequest();
+          var xhr = new XMLHttpRequest();
           xhr.open(method, action);
-
           xhr.setRequestHeader("Accept", "application/json");
-          xhr.setRequestHeader(
-            "Content-type",
-            "application/x-www-form-urlencoded"
-          );
+          xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 
-          xhr.onload = () => this.handleResponse(xhr, false);
-          const formData = `title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.textContent}`;
+          xhr.onload = function () {
+            return _this.handleResponse(xhr, false);
+          };
 
+          var formData = "title=".concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.textContent);
           xhr.send(formData);
-
           e.preventDefault();
-        }
+        })();
       }
-
-      return false;
-    },
-    //updates manga
-    updateManga(e) {
-      const updateForms = document.querySelectorAll(".updateForm");
-      console.log(updateForms);
-      this.sendPut(e, updateForms);
-    },
-    //event listener to send get requests
-    getManga(e) {
-      const getForm = document.querySelector("#getForm");
-      this.sendGet(e, getForm);
-    },
-    //event listener to send post requests
-    addManga(e) {
-      const addForms = document.querySelectorAll(".addForm");
-      console.log(addForms);
-      this.sendPost(e, addForms);
-    },
-    //deletes cards from datamodel and view
-    deleteCard(id) {
-      delete this.mangaList.mangaList[id];
-      this.deleteManga(id);
-      this.forceUpdate();
-    },
-    //updates mangaList on server
-    deleteManga(id) {
-      const xhr = new XMLHttpRequest();
-      xhr.open("POST", "/deleteManga");
-
-      xhr.setRequestHeader("Accept", "application/json");
-      xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-
-      xhr.onload = () => this.handleResponse(xhr, false);
-      const formData = `title=${id}`;
-
-      xhr.send(formData);
-    },
-    //updates view
-    forceUpdate() {
-      this.$forceUpdate();
-    },
-    searchManga() {
-      fetch(
-        `https://api.jikan.moe/v3/search/manga?q=${this.searchQuery}&page=1&limit=10&type=Manga`
-      )
-        .then(res => {
-          return res.json();
-        })
-        .then(data => {
-          console.log(data);
-          this.searchResults = data;
-        });
     }
-*/
+  } catch (err) {
+    _iterator2.e(err);
+  } finally {
+    _iterator2.f();
+  }
 
+  return false;
+};
 
 var SearchBar = function SearchBar(props) {
   return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h1", {
-    "class": "is-size-1"
+    className: "is-size-1"
   }, "MangaTracker"), /*#__PURE__*/React.createElement("h5", {
-    "class": "is-size-3"
+    className: "is-size-3"
   }, "Search for a manga and track your progress."), /*#__PURE__*/React.createElement("input", {
     type: "search",
     name: "searchbar",
     id: "searchbar",
     placeholder: "Search Manga",
-    "class": "input"
+    className: "input",
+    onChange: function onChange(e) {
+      searchQuery = e.target.value;
+    }
   }), /*#__PURE__*/React.createElement("input", {
+    onClick: searchManga,
     type: "submit",
     value: "Search",
-    "class": "input"
+    className: "input"
   }));
 };
 
@@ -208,32 +227,45 @@ var Controls = function Controls(props) {
     action: "/getManga",
     method: "GET"
   }, /*#__PURE__*/React.createElement("div", {
-    "class": "box"
+    className: "box"
   }, /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      ReactDOM.render( /*#__PURE__*/React.createElement(AddSection, {
+        csrf: csrfToken
+      }), document.querySelector("#content"));
+    },
     type: "button",
-    "class": "button"
+    className: "button",
+    id: "resultButton"
   }, "Results"), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      ReactDOM.render( /*#__PURE__*/React.createElement(TrackedSection, {
+        csrf: csrfToken
+      }), document.querySelector("#content"));
+      loadMangaFromServer();
+    },
     type: "button",
-    "class": "button"
+    className: "button",
+    id: "trackButton"
   }, "Tracked"))));
 };
 
 var AddSection = function AddSection(props) {
   return /*#__PURE__*/React.createElement("section", {
     id: "addSection"
-  }, /*#__PURE__*/React.createElement("div", {
-    id: "addDiv"
   }, /*#__PURE__*/React.createElement("h1", {
-    "class": "is-size-3"
-  }, "Add a manga:")));
+    className: "is-size-3"
+  }, "Add a manga:"), /*#__PURE__*/React.createElement("div", {
+    id: "addDiv"
+  }));
 };
 
 var TrackedSection = function TrackedSection(props) {
-  return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h1", {
+    className: "is-size-3"
+  }, "Tracked Manga:"), /*#__PURE__*/React.createElement("div", {
     id: "trackedScrollWrap"
-  }, /*#__PURE__*/React.createElement("h1", {
-    "class": "is-size-3"
-  }, "Tracked Manga:")));
+  }));
 };
 
 var AddMangaList = function AddMangaList(props) {
@@ -245,51 +277,55 @@ var AddMangaList = function AddMangaList(props) {
     }, "No Manga yet"));
   }
 
-  var mangaNodes = props.manga.map(function (manga) {
+  var mangaNodes = props.manga.map(function (result) {
     return /*#__PURE__*/React.createElement("section", {
-      "class": "resultCard"
+      className: "resultCard"
     }, /*#__PURE__*/React.createElement("div", {
-      "class": "box"
+      className: "box"
     }, /*#__PURE__*/React.createElement("article", {
-      "class": "media"
+      className: "media"
     }, /*#__PURE__*/React.createElement("div", {
-      "class": "media-left"
+      className: "media-left"
     }, /*#__PURE__*/React.createElement("figure", {
-      "class": "image"
+      className: "image"
     }, /*#__PURE__*/React.createElement("img", {
       src: result.image_url,
       alt: result.title
     }))), /*#__PURE__*/React.createElement("div", {
-      "class": "media-content"
+      className: "media-content"
     }, /*#__PURE__*/React.createElement("form", {
       id: result.title.replace(/\s/g, ""),
-      "class": "addForm",
+      className: "addForm",
       action: "/addManga",
       method: "POST"
     }, /*#__PURE__*/React.createElement("h1", {
-      "class": "title"
+      className: "title"
     }, result.title), /*#__PURE__*/React.createElement("label", {
-      "class": "label",
+      className: "label",
       "for": "currentChapter"
     }, "Current Chapter"), /*#__PURE__*/React.createElement("input", {
       type: "number",
       name: "currentChapter",
       min: "1",
       max: "9999",
-      "class": "input currentChapter"
+      className: "input currentChapter"
     }), /*#__PURE__*/React.createElement("label", {
-      "class": "label",
+      className: "label",
       "for": "maxChapter"
     }, "Max Chapters(can be adjusted later)"), /*#__PURE__*/React.createElement("p", {
-      "class": "maxChapter"
+      className: "maxChapter"
     }, result.chapters), /*#__PURE__*/React.createElement("label", {
-      "class": "label",
+      className: "label",
       "for": "synopsis"
     }, "Synopsis"), /*#__PURE__*/React.createElement("textarea", {
-      "class": "textarea synopsis"
-    }, result.synopsis), /*#__PURE__*/React.createElement("button", {
-      "class": "button",
-      onClick: addManga($event),
+      className: "textarea synopsis"
+    }, result.synopsis), /*#__PURE__*/React.createElement("input", {
+      type: "hidden",
+      name: "_csrf",
+      value: csrfToken
+    }), /*#__PURE__*/React.createElement("button", {
+      className: "button",
+      onClick: addManga.bind(event),
       type: "submit"
     }, "Add"))))));
   });
@@ -307,57 +343,62 @@ var TrackedMangaList = function TrackedMangaList(props) {
     }, "No Manga yet"));
   }
 
+  console.log(props.manga[0]._id);
   var mangaNodes = props.manga.map(function (manga) {
     return /*#__PURE__*/React.createElement("section", {
-      "class": "trackedCard"
+      className: "trackedCard"
     }, /*#__PURE__*/React.createElement("div", {
-      "class": "box"
+      className: "box"
     }, /*#__PURE__*/React.createElement("article", {
-      "class": "media"
+      className: "media"
     }, /*#__PURE__*/React.createElement("div", {
-      "class": "media-left"
+      className: "media-left"
     }, /*#__PURE__*/React.createElement("figure", {
-      "class": "image"
+      className: "image"
     }, /*#__PURE__*/React.createElement("img", {
       src: manga.image_url,
       alt: manga.title
     }))), /*#__PURE__*/React.createElement("div", {
-      "class": "media-content"
+      className: "media-content"
     }, /*#__PURE__*/React.createElement("form", {
-      "class": "updateForm",
+      className: "updateForm",
       action: "/updateManga",
       method: "PUT"
     }, /*#__PURE__*/React.createElement("label", {
-      "class": "label"
+      className: "label"
     }, "Title:"), /*#__PURE__*/React.createElement("h1", {
-      "class": "title"
+      className: "title"
     }, manga.title), /*#__PURE__*/React.createElement("label", {
-      "class": "label"
-    }, "Current Chapter:"), /*#__PURE__*/React.createElement("input", _defineProperty({
-      "class": "currentChapter",
+      className: "label"
+    }, "Current Chapter:"), /*#__PURE__*/React.createElement("input", {
       type: "number",
       min: "1",
       max: "9999",
-      value: manga.currentChapter
-    }, "class", "input currentChapter")), /*#__PURE__*/React.createElement("label", {
-      "class": "label"
-    }, "Max Chapter:"), /*#__PURE__*/React.createElement("input", _defineProperty({
-      "class": "maxChapter",
+      value: manga.currentChapter,
+      className: "input currentChapter"
+    }), /*#__PURE__*/React.createElement("label", {
+      className: "label"
+    }, "Max Chapter:"), /*#__PURE__*/React.createElement("input", {
       type: "number",
       min: "1",
       max: "9999",
-      value: manga.maxChapter
-    }, "class", "input maxChapter")), /*#__PURE__*/React.createElement("label", {
-      "class": "label"
+      value: manga.maxChapter,
+      className: "input maxChapter"
+    }), /*#__PURE__*/React.createElement("label", {
+      className: "label"
     }, "Description:"), /*#__PURE__*/React.createElement("textarea", {
-      "class": "description textarea"
-    }, manga.description), /*#__PURE__*/React.createElement("button", {
-      "class": "button",
-      onClick: updateManga($event),
+      className: "description textarea"
+    }, manga.description), /*#__PURE__*/React.createElement("input", {
+      type: "hidden",
+      name: "_csrf",
+      value: csrfToken
+    }), /*#__PURE__*/React.createElement("button", {
+      className: "button",
+      onClick: updateManga.bind(event),
       type: "submit"
     }, "Update")), /*#__PURE__*/React.createElement("button", {
-      "class": "button",
-      onClick: deleteCard(manga.title)
+      className: "button",
+      onClick: deleteCard.bind(manga.title)
     }, "Delete")))));
   });
   return /*#__PURE__*/React.createElement("div", {
@@ -367,35 +408,28 @@ var TrackedMangaList = function TrackedMangaList(props) {
 
 var loadMangaFromServer = function loadMangaFromServer() {
   sendAjax("GET", "/getManga", null, function (data) {
-    ReactDOM.render( /*#__PURE__*/React.createElement(DomoList, {
+    console.log(data);
+    ReactDOM.render( /*#__PURE__*/React.createElement(TrackedMangaList, {
       manga: data.manga
-    }), document.querySelector("#domos"));
+    }), document.querySelector("#trackedScrollWrap"));
   });
 };
 
 var setup = function setup(csrf) {
+  csrfToken = csrf;
   ReactDOM.render( /*#__PURE__*/React.createElement(SearchBar, {
     csrf: csrf
   }), document.querySelector("#search"));
   ReactDOM.render( /*#__PURE__*/React.createElement(Controls, {
     csrf: csrf
   }), document.querySelector("#controls"));
-
-  if (searching) {
-    ReactDOM.render( /*#__PURE__*/React.createElement(AddSection, {
-      csrf: csrf
-    }), document.querySelector("#content"));
-  } else {
-    ReactDOM.render( /*#__PURE__*/React.createElement(TrackedSection, {
-      csrf: csrf
-    }), document.querySelector("#content"));
-  }
-
-  ReactDOM.render( /*#__PURE__*/React.createElement(AddMangaList, {
-    manga: [],
+  ReactDOM.render( /*#__PURE__*/React.createElement(AddSection, {
     csrf: csrf
-  }), document.querySelector("#addDiv"));
-  loadMangaFromServer();
+  }), document.querySelector("#content")); // ReactDOM.render(
+  //   <AddMangaList manga={searchResults} csrf={csrf} />,
+  //   document.querySelector("#addDiv")
+  // );
+  // loadMangaFromServer();
 };
 
 var getToken = function getToken() {
