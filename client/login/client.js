@@ -34,7 +34,7 @@ const handleSignup = (e) => {
     handleError("Passwords do not match");
     return false;
   }
-
+  
   sendAjax(
     "POST",
     $("#signupForm").attr("action"),
@@ -66,6 +66,7 @@ const LoginWindow = (props) => {
 };
 
 const SignupWindow = (props) => {
+  console.log($("#signupForm").serialize());
   return (
     <form
       id="signupForm"
@@ -87,6 +88,7 @@ const SignupWindow = (props) => {
         placeholder="retype password"
       />
       <input type="hidden" name="_csrf" value={props.csrf} />
+      <input type="hidden" name="subscribed" value={false} />
       <input className="formSubmit" type="submit" value="Sign Up" />
     </form>
   );

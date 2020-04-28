@@ -64,6 +64,7 @@ var LoginWindow = function LoginWindow(props) {
 };
 
 var SignupWindow = function SignupWindow(props) {
+  console.log($("#signupForm").serialize());
   return /*#__PURE__*/React.createElement("form", {
     id: "signupForm",
     name: "signupForm",
@@ -96,6 +97,10 @@ var SignupWindow = function SignupWindow(props) {
     type: "hidden",
     name: "_csrf",
     value: props.csrf
+  }), /*#__PURE__*/React.createElement("input", {
+    type: "hidden",
+    name: "subscribed",
+    value: false
   }), /*#__PURE__*/React.createElement("input", {
     className: "formSubmit",
     type: "submit",
