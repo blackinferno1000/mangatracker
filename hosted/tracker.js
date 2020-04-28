@@ -11,6 +11,7 @@ var mangaList = [];
 var searchQuery = ""; // let filters = {};
 // let genres = {};
 
+var subscribed;
 var searchResults = [];
 var csrfToken; //searches for manga in jikan API
 
@@ -18,11 +19,14 @@ var searchManga = function searchManga() {
   fetch("https://api.jikan.moe/v3/search/manga?q=".concat(searchQuery, "&page=1&limit=10&type=Manga")).then(function (res) {
     return res.json();
   }).then(function (data) {
-    // console.log(data);
-    searchResults = data.results;
-    ReactDOM.render( /*#__PURE__*/React.createElement(AddMangaList, {
-      manga: searchResults
-    }), document.querySelector("#addDiv"));
+    if (document.querySelector("#addDiv")) {
+      searchResults = data.results;
+      ReactDOM.render( /*#__PURE__*/React.createElement(AddMangaList, {
+        manga: searchResults
+      }), document.querySelector("#addDiv"));
+    } else {
+      ReactDOM.render( /*#__PURE__*/React.createElement("h1", null, "Go to results tab to search for manga. Click tracked button again to retrieve manga you track."), document.querySelector("#trackedScrollWrap"));
+    }
   });
 }; //updates manga
 
@@ -52,7 +56,7 @@ var deleteCard = function deleteCard(e, id) {
 var deleteManga = function deleteManga(id) {
   var formData = "_csrf=".concat(csrfToken, "&id=").concat(id);
   sendAjax("POST", "/deleteManga", formData, function () {
-    console.log("succesful deletion");
+    // console.log("succesful deletion");
     loadMangaFromServer();
   });
 }; //sends post requests
@@ -76,7 +80,8 @@ var sendPost = function sendPost(e, postForms) {
             maxChapter = void 0,
             description = void 0,
             _csrf = void 0,
-            imageUrl = void 0;
+            imageUrl = void 0,
+            notes = void 0;
 
         title = form.querySelector(".title");
         currentChapter = form.querySelector(".currentChapter");
@@ -84,7 +89,16 @@ var sendPost = function sendPost(e, postForms) {
         description = form.querySelector(".synopsis");
         _csrf = form.querySelector("input[type='hidden']");
         imageUrl = form.parentElement.parentElement.querySelector("img").getAttribute("src");
-        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl); // console.log(formData);
+        notes = form.querySelector(".notes"); // let formData = `_csrf=${_csrf.value}&notes=${notes.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}&imageUrl=${imageUrl}`;
+
+        var formData = void 0;
+
+        if (subscribed) {
+          formData = "_csrf=".concat(_csrf.value, "&notes=").concat(notes.value || "put notes here", "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
+        } else {
+          formData = "_csrf=".concat(_csrf.value, "&notes=put notes here&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
+        } // console.log(formData);
+
 
         sendAjax("POST", action, formData, function (result) {
           mangaList.push(result[0]);
@@ -120,7 +134,8 @@ var sendPut = function sendPut(e, updateForms) {
             maxChapter = void 0,
             description = void 0,
             _csrf = void 0,
-            imageUrl = void 0;
+            imageUrl = void 0,
+            notes = void 0;
 
         title = form.querySelector(".title");
         currentChapter = form.querySelector(".currentChapter");
@@ -128,7 +143,16 @@ var sendPut = function sendPut(e, updateForms) {
         description = form.querySelector(".description");
         _csrf = form.querySelector("input[type='hidden']");
         imageUrl = form.parentElement.parentElement.querySelector("img").getAttribute("src");
-        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl); // console.log(formData);
+        notes = form.querySelector(".notes"); // let formData = `_csrf=${_csrf.value}&notes=${notes.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.value}&imageUrl=${imageUrl}`;
+
+        var formData = void 0;
+
+        if (subscribed) {
+          formData = "_csrf=".concat(_csrf.value, "&notes=").concat(notes.value || "put notes here", "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
+        } else {
+          formData = "_csrf=".concat(_csrf.value, "&notes=put notes here&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
+        } // console.log(formData);
+
 
         sendAjax("POST", action, formData, function (result) {
           mangaList.push(result[0]);
@@ -196,7 +220,16 @@ var Controls = function Controls(props) {
     type: "button",
     className: "button",
     id: "trackButton"
-  }, "Tracked"))));
+  }, "Tracked"), /*#__PURE__*/React.createElement("button", {
+    onClick: function onClick() {
+      sendAjax("POST", "/subscribe", "_csrf=".concat(csrfToken), function () {
+        location.reload();
+      });
+    },
+    type: "button",
+    className: "button",
+    id: "subscribeButton"
+  }, "SubscribeToggle"))));
 }; //add section component
 
 
@@ -230,56 +263,120 @@ var AddMangaList = function AddMangaList(props) {
   }
 
   var mangaNodes = props.manga.map(function (result) {
-    return /*#__PURE__*/React.createElement("section", {
-      className: "resultCard"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "box"
-    }, /*#__PURE__*/React.createElement("article", {
-      className: "media"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "media-left"
-    }, /*#__PURE__*/React.createElement("figure", {
-      className: "image"
-    }, /*#__PURE__*/React.createElement("img", {
-      src: result.image_url,
-      alt: result.title
-    }))), /*#__PURE__*/React.createElement("div", {
-      className: "media-content"
-    }, /*#__PURE__*/React.createElement("form", {
-      id: result.title.replace(/\s/g, ""),
-      className: "addForm",
-      action: "/addManga",
-      method: "POST"
-    }, /*#__PURE__*/React.createElement("h1", {
-      className: "title"
-    }, result.title), /*#__PURE__*/React.createElement("label", {
-      className: "label",
-      "for": "currentChapter"
-    }, "Current Chapter"), /*#__PURE__*/React.createElement("input", {
-      type: "number",
-      name: "currentChapter",
-      min: "1",
-      max: "9999",
-      className: "input currentChapter"
-    }), /*#__PURE__*/React.createElement("label", {
-      className: "label",
-      "for": "maxChapter"
-    }, "Max Chapters(can be adjusted later)"), /*#__PURE__*/React.createElement("p", {
-      className: "maxChapter"
-    }, result.chapters), /*#__PURE__*/React.createElement("label", {
-      className: "label",
-      "for": "synopsis"
-    }, "Synopsis"), /*#__PURE__*/React.createElement("textarea", {
-      className: "textarea synopsis"
-    }, result.synopsis), /*#__PURE__*/React.createElement("input", {
-      type: "hidden",
-      name: "_csrf",
-      value: csrfToken
-    }), /*#__PURE__*/React.createElement("button", {
-      className: "button",
-      onClick: addManga.bind(event),
-      type: "submit"
-    }, "Add"))))));
+    if (subscribed) {
+      return /*#__PURE__*/React.createElement("section", {
+        className: "resultCard"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "box"
+      }, /*#__PURE__*/React.createElement("article", {
+        className: "media"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "media-left"
+      }, /*#__PURE__*/React.createElement("figure", {
+        className: "image"
+      }, /*#__PURE__*/React.createElement("img", {
+        src: result.image_url,
+        alt: result.title
+      }))), /*#__PURE__*/React.createElement("div", {
+        className: "media-content"
+      }, /*#__PURE__*/React.createElement("form", {
+        id: result.title.replace(/\s/g, ""),
+        className: "addForm",
+        action: "/addManga",
+        method: "POST"
+      }, /*#__PURE__*/React.createElement("h1", {
+        className: "title"
+      }, result.title), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "currentChapter"
+      }, "Current Chapter"), /*#__PURE__*/React.createElement("input", {
+        type: "number",
+        name: "currentChapter",
+        min: "1",
+        max: "9999",
+        className: "input currentChapter"
+      }), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "maxChapter"
+      }, "Max Chapters(can be adjusted later)"), /*#__PURE__*/React.createElement("p", {
+        className: "maxChapter"
+      }, result.chapters), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "synopsis"
+      }, "Synopsis"), /*#__PURE__*/React.createElement("textarea", {
+        className: "textarea synopsis"
+      }, result.synopsis), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "notes"
+      }, "Notes(premium feature)"), /*#__PURE__*/React.createElement("textarea", {
+        className: "textarea notes"
+      }), /*#__PURE__*/React.createElement("input", {
+        type: "hidden",
+        name: "_csrf",
+        value: csrfToken
+      }), /*#__PURE__*/React.createElement("button", {
+        className: "button",
+        onClick: addManga.bind(event),
+        type: "submit"
+      }, "Add"))))));
+    } else {
+      return /*#__PURE__*/React.createElement("section", {
+        className: "resultCard"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "box"
+      }, /*#__PURE__*/React.createElement("article", {
+        className: "media"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "media-left"
+      }, /*#__PURE__*/React.createElement("figure", {
+        className: "image"
+      }, /*#__PURE__*/React.createElement("img", {
+        src: result.image_url,
+        alt: result.title
+      }))), /*#__PURE__*/React.createElement("div", {
+        className: "media-content"
+      }, /*#__PURE__*/React.createElement("form", {
+        id: result.title.replace(/\s/g, ""),
+        className: "addForm",
+        action: "/addManga",
+        method: "POST"
+      }, /*#__PURE__*/React.createElement("h1", {
+        className: "title"
+      }, result.title), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "currentChapter"
+      }, "Current Chapter"), /*#__PURE__*/React.createElement("input", {
+        type: "number",
+        name: "currentChapter",
+        min: "1",
+        max: "9999",
+        className: "input currentChapter"
+      }), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "maxChapter"
+      }, "Max Chapters(can be adjusted later)"), /*#__PURE__*/React.createElement("p", {
+        className: "maxChapter"
+      }, result.chapters), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "synopsis"
+      }, "Synopsis"), /*#__PURE__*/React.createElement("textarea", {
+        className: "textarea synopsis"
+      }, result.synopsis), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "notes"
+      }, "Notes(premium feature)"), /*#__PURE__*/React.createElement("textarea", {
+        disabled: true,
+        className: "textarea notes"
+      }), /*#__PURE__*/React.createElement("input", {
+        type: "hidden",
+        name: "_csrf",
+        value: csrfToken
+      }), /*#__PURE__*/React.createElement("button", {
+        className: "button",
+        onClick: addManga.bind(event),
+        type: "submit"
+      }, "Add"))))));
+    }
   });
   return /*#__PURE__*/React.createElement("div", {
     className: "mangaList"
@@ -297,61 +394,130 @@ var TrackedMangaList = function TrackedMangaList(props) {
   }
 
   var mangaNodes = props.manga.map(function (manga) {
-    return /*#__PURE__*/React.createElement("section", {
-      className: "trackedCard"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "box"
-    }, /*#__PURE__*/React.createElement("article", {
-      className: "media"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "media-left"
-    }, /*#__PURE__*/React.createElement("figure", {
-      className: "image"
-    }, /*#__PURE__*/React.createElement("img", {
-      src: manga.imageUrl,
-      alt: manga.title
-    }))), /*#__PURE__*/React.createElement("div", {
-      className: "media-content"
-    }, /*#__PURE__*/React.createElement("form", {
-      className: "updateForm",
-      action: "/updateManga",
-      method: "PUT"
-    }, /*#__PURE__*/React.createElement("label", {
-      className: "label"
-    }, "Title:"), /*#__PURE__*/React.createElement("h1", {
-      className: "title"
-    }, manga.title), /*#__PURE__*/React.createElement("label", {
-      className: "label"
-    }, "Current Chapter:"), /*#__PURE__*/React.createElement("input", {
-      type: "number",
-      min: "1",
-      max: "9999",
-      defaultValue: manga.currentChapter,
-      className: "input currentChapter"
-    }), /*#__PURE__*/React.createElement("label", {
-      className: "label"
-    }, "Max Chapter:"), /*#__PURE__*/React.createElement("input", {
-      type: "number",
-      min: "1",
-      max: "9999",
-      defaultValue: manga.maxChapter,
-      className: "input maxChapter"
-    }), /*#__PURE__*/React.createElement("label", {
-      className: "label"
-    }, "Description:"), /*#__PURE__*/React.createElement("textarea", {
-      className: "description textarea"
-    }, manga.description), /*#__PURE__*/React.createElement("input", {
-      type: "hidden",
-      name: "_csrf",
-      value: csrfToken
-    }), /*#__PURE__*/React.createElement("button", {
-      className: "button",
-      onClick: updateManga.bind(event),
-      type: "submit"
-    }, "Update")), /*#__PURE__*/React.createElement("button", {
-      className: "button",
-      onClick: deleteCard.bind(event, "".concat(manga._id))
-    }, "Delete")))));
+    if (subscribed) {
+      return /*#__PURE__*/React.createElement("section", {
+        className: "trackedCard"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "box"
+      }, /*#__PURE__*/React.createElement("article", {
+        className: "media"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "media-left"
+      }, /*#__PURE__*/React.createElement("figure", {
+        className: "image"
+      }, /*#__PURE__*/React.createElement("img", {
+        src: manga.imageUrl,
+        alt: manga.title
+      }))), /*#__PURE__*/React.createElement("div", {
+        className: "media-content"
+      }, /*#__PURE__*/React.createElement("form", {
+        className: "updateForm",
+        action: "/updateManga",
+        method: "PUT"
+      }, /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Title:"), /*#__PURE__*/React.createElement("h1", {
+        className: "title"
+      }, manga.title), /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Current Chapter:"), /*#__PURE__*/React.createElement("input", {
+        type: "number",
+        min: "1",
+        max: "9999",
+        defaultValue: manga.currentChapter,
+        className: "input currentChapter"
+      }), /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Max Chapter:"), /*#__PURE__*/React.createElement("input", {
+        type: "number",
+        min: "1",
+        max: "9999",
+        defaultValue: manga.maxChapter,
+        className: "input maxChapter"
+      }), /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Description:"), /*#__PURE__*/React.createElement("textarea", {
+        className: "description textarea"
+      }, manga.description), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "notes"
+      }, "Notes(premium feature)"), /*#__PURE__*/React.createElement("textarea", {
+        className: "textarea notes"
+      }, manga.notes), /*#__PURE__*/React.createElement("input", {
+        type: "hidden",
+        name: "_csrf",
+        value: csrfToken
+      }), /*#__PURE__*/React.createElement("button", {
+        className: "button",
+        onClick: updateManga.bind(event),
+        type: "submit"
+      }, "Update")), /*#__PURE__*/React.createElement("button", {
+        className: "button",
+        onClick: deleteCard.bind(event, "".concat(manga._id))
+      }, "Delete")))));
+    } else {
+      return /*#__PURE__*/React.createElement("section", {
+        className: "trackedCard"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "box"
+      }, /*#__PURE__*/React.createElement("article", {
+        className: "media"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "media-left"
+      }, /*#__PURE__*/React.createElement("figure", {
+        className: "image"
+      }, /*#__PURE__*/React.createElement("img", {
+        src: manga.imageUrl,
+        alt: manga.title
+      }))), /*#__PURE__*/React.createElement("div", {
+        className: "media-content"
+      }, /*#__PURE__*/React.createElement("form", {
+        className: "updateForm",
+        action: "/updateManga",
+        method: "PUT"
+      }, /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Title:"), /*#__PURE__*/React.createElement("h1", {
+        className: "title"
+      }, manga.title), /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Current Chapter:"), /*#__PURE__*/React.createElement("input", {
+        type: "number",
+        min: "1",
+        max: "9999",
+        defaultValue: manga.currentChapter,
+        className: "input currentChapter"
+      }), /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Max Chapter:"), /*#__PURE__*/React.createElement("input", {
+        type: "number",
+        min: "1",
+        max: "9999",
+        defaultValue: manga.maxChapter,
+        className: "input maxChapter"
+      }), /*#__PURE__*/React.createElement("label", {
+        className: "label"
+      }, "Description:"), /*#__PURE__*/React.createElement("textarea", {
+        className: "description textarea"
+      }, manga.description), /*#__PURE__*/React.createElement("label", {
+        className: "label",
+        "for": "notes"
+      }, "Notes(premium feature)"), /*#__PURE__*/React.createElement("textarea", {
+        disabled: true,
+        className: "textarea notes"
+      }, manga.notes), /*#__PURE__*/React.createElement("input", {
+        type: "hidden",
+        name: "_csrf",
+        value: csrfToken
+      }), /*#__PURE__*/React.createElement("button", {
+        className: "button",
+        onClick: updateManga.bind(event),
+        type: "submit"
+      }, "Update")), /*#__PURE__*/React.createElement("button", {
+        className: "button",
+        onClick: deleteCard.bind(event, "".concat(manga._id))
+      }, "Delete")))));
+    }
   });
   return /*#__PURE__*/React.createElement("div", {
     className: "mangaList"
@@ -386,6 +552,9 @@ var setup = function setup(csrf) {
 var getToken = function getToken() {
   sendAjax("GET", "/getToken", null, function (result) {
     setup(result.csrfToken);
+  });
+  sendAjax("GET", "/getSubscription", null, function (result) {
+    subscribed = result.subscribed; // console.log(subscribed);
   });
 }; //initializes page
 

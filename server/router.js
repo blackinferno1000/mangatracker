@@ -1,55 +1,66 @@
-const controllers = require("./controllers");
-const mid = require("./middleware");
+const controllers = require('./controllers');
+const mid = require('./middleware');
 
 const router = (app) => {
-  app.get("/getToken", mid.requiresSecure, controllers.Account.getToken);
-  app.get("/getManga", mid.requiresLogin, controllers.Tracker.getManga);
+  app.get('/getToken', mid.requiresSecure, controllers.Account.getToken);
+  app.get(
+    '/getSubscription',
+    mid.requiresSecure,
+    controllers.Account.getSubscription,
+  );
+  app.get('/getManga', mid.requiresLogin, controllers.Tracker.getManga);
   app.post(
-    "/addManga",
+    '/addManga',
     mid.requiresLogin,
     mid.requiresSecure,
-    controllers.Tracker.addManga
+    controllers.Tracker.addManga,
   );
   app.post(
-    "/deleteManga",
+    '/deleteManga',
     mid.requiresLogin,
     mid.requiresSecure,
-    controllers.Tracker.deleteManga
+    controllers.Tracker.deleteManga,
   );
   app.post(
-    "/updateManga",
+    '/subscribe',
     mid.requiresLogin,
     mid.requiresSecure,
-    controllers.Tracker.updateManga
+    controllers.Account.subscribe,
+  );
+  app.post(
+    '/updateManga',
+    mid.requiresLogin,
+    mid.requiresSecure,
+    controllers.Tracker.updateManga,
   );
   app.get(
-    "/login",
+    '/login',
     mid.requiresSecure,
     mid.requiresLogout,
-    controllers.Account.loginPage
+    controllers.Account.loginPage,
   );
   app.post(
-    "/login",
+    '/login',
     mid.requiresSecure,
     mid.requiresLogout,
-    controllers.Account.login
+    controllers.Account.login,
   );
   app.post(
-    "/signup",
+    '/signup',
     mid.requiresSecure,
     mid.requiresLogout,
-    controllers.Account.signup
+    controllers.Account.signup,
   );
-  app.post("/updatePassword", controllers.Account.updatePassword);
-  app.get("/reset", controllers.Account.resetPage);
-  app.get("/logout", mid.requiresLogin, controllers.Account.logout);
-  app.get("/tracker", controllers.Tracker.trackerPage);
-  app.get("/", controllers.Account.loginPage);
+  app.post('/updatePassword', controllers.Account.updatePassword);
+  app.get('/reset', controllers.Account.resetPage);
+  app.get('/logout', mid.requiresLogin, controllers.Account.logout);
+  app.get('/tracker', controllers.Tracker.trackerPage);
+  app.get('/', controllers.Account.loginPage);
   app.get(
-    "*",
+    '*',
     mid.requiresSecure,
     mid.requiresLogin,
-    controllers.Tracker.trackerPage
+    controllers.Tracker.trackerPage,
   );
 };
 

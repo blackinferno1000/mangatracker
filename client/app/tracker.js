@@ -3,6 +3,7 @@ let mangaList = [];
 let searchQuery = "";
 // let filters = {};
 // let genres = {};
+let subscribed;
 let searchResults = [];
 let csrfToken;
 
@@ -15,12 +16,18 @@ const searchManga = () => {
       return res.json();
     })
     .then((data) => {
-      // console.log(data);
-      searchResults = data.results;
-      ReactDOM.render(
-        <AddMangaList manga={searchResults} />,
-        document.querySelector("#addDiv")
-      );
+      if (document.querySelector("#addDiv")) {
+        searchResults = data.results;
+        ReactDOM.render(
+          <AddMangaList manga={searchResults} />,
+          document.querySelector("#addDiv")
+        );
+      } else {
+        ReactDOM.render(
+          <h1>Go to results tab to search for manga. Click tracked button again to retrieve manga you track.</h1>,
+          document.querySelector("#trackedScrollWrap")
+        );
+      }
     });
 };
 
@@ -50,7 +57,7 @@ const deleteCard = (e, id) => {
 const deleteManga = (id) => {
   const formData = `_csrf=${csrfToken}&id=${id}`;
   sendAjax("POST", "/deleteManga", formData, () => {
-    console.log("succesful deletion");
+    // console.log("succesful deletion");
     loadMangaFromServer();
   });
 };
@@ -63,7 +70,13 @@ const sendPost = (e, postForms) => {
     if (e.target.form.id === form.id) {
       const action = form.getAttribute("action");
 
-      let title, currentChapter, maxChapter, description, _csrf, imageUrl;
+      let title,
+        currentChapter,
+        maxChapter,
+        description,
+        _csrf,
+        imageUrl,
+        notes;
 
       title = form.querySelector(".title");
       currentChapter = form.querySelector(".currentChapter");
@@ -73,7 +86,20 @@ const sendPost = (e, postForms) => {
       imageUrl = form.parentElement.parentElement
         .querySelector("img")
         .getAttribute("src");
-      let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}&imageUrl=${imageUrl}`;
+      notes = form.querySelector(".notes");
+      // let formData = `_csrf=${_csrf.value}&notes=${notes.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}&imageUrl=${imageUrl}`;
+      let formData;
+      if (subscribed) {
+        formData = `_csrf=${_csrf.value}&notes=${
+          notes.value || `put notes here`
+        }&title=${title.textContent}&currentChapter=${
+          currentChapter.value
+        }&maxChapter=${maxChapter.textContent}&description=${
+          description.value
+        }&imageUrl=${imageUrl}`;
+      } else {
+        formData = `_csrf=${_csrf.value}&notes=put notes here&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}&imageUrl=${imageUrl}`;
+      }
       // console.log(formData);
       sendAjax("POST", action, formData, (result) => {
         mangaList.push(result[0]);
@@ -94,7 +120,13 @@ const sendPut = (e, updateForms) => {
     if (e.target.form.id === form.id) {
       const action = form.getAttribute("action");
 
-      let title, currentChapter, maxChapter, description, _csrf, imageUrl;
+      let title,
+        currentChapter,
+        maxChapter,
+        description,
+        _csrf,
+        imageUrl,
+        notes;
 
       title = form.querySelector(".title");
       currentChapter = form.querySelector(".currentChapter");
@@ -104,7 +136,14 @@ const sendPut = (e, updateForms) => {
       imageUrl = form.parentElement.parentElement
         .querySelector("img")
         .getAttribute("src");
-      let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.value}&imageUrl=${imageUrl}`;
+      notes = form.querySelector(".notes");
+      // let formData = `_csrf=${_csrf.value}&notes=${notes.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.value}&imageUrl=${imageUrl}`;
+      let formData;
+      if (subscribed) {
+        formData = `_csrf=${_csrf.value}&notes=${notes.value || `put notes here`}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.value}&imageUrl=${imageUrl}`;
+      } else {
+        formData = `_csrf=${_csrf.value}&notes=put notes here&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.value}&imageUrl=${imageUrl}`;
+      }
       // console.log(formData);
       sendAjax("POST", action, formData, (result) => {
         mangaList.push(result[0]);
@@ -176,6 +215,18 @@ const Controls = (props) => {
           >
             Tracked
           </button>
+          <button
+            onClick={() => {
+              sendAjax("POST", "/subscribe", `_csrf=${csrfToken}`, () => {
+                location.reload();
+              });
+            }}
+            type="button"
+            className="button"
+            id="subscribeButton"
+          >
+            SubscribeToggle
+          </button>
         </div>
       </form>
     </section>
@@ -213,57 +264,119 @@ const AddMangaList = function (props) {
   }
 
   const mangaNodes = props.manga.map(function (result) {
-    return (
-      <section className="resultCard">
-        <div className="box">
-          <article className="media">
-            <div className="media-left">
-              <figure className="image">
-                <img src={result.image_url} alt={result.title} />
-              </figure>
-            </div>
-            <div className="media-content">
-              <form
-                id={result.title.replace(/\s/g, "")}
-                className="addForm"
-                action="/addManga"
-                method="POST"
-              >
-                <h1 className="title">{result.title}</h1>
-                <label className="label" for="currentChapter">
-                  Current Chapter
-                </label>
-                <input
-                  type="number"
-                  name="currentChapter"
-                  min="1"
-                  max="9999"
-                  className="input currentChapter"
-                />
-                <label className="label" for="maxChapter">
-                  Max Chapters(can be adjusted later)
-                </label>
-                <p className="maxChapter">{result.chapters}</p>
-                <label className="label" for="synopsis">
-                  Synopsis
-                </label>
-                <textarea className="textarea synopsis">
-                  {result.synopsis}
-                </textarea>
-                <input type="hidden" name="_csrf" value={csrfToken} />
-                <button
-                  className="button"
-                  onClick={addManga.bind(event)}
-                  type="submit"
+    if (subscribed) {
+      return (
+        <section className="resultCard">
+          <div className="box">
+            <article className="media">
+              <div className="media-left">
+                <figure className="image">
+                  <img src={result.image_url} alt={result.title} />
+                </figure>
+              </div>
+              <div className="media-content">
+                <form
+                  id={result.title.replace(/\s/g, "")}
+                  className="addForm"
+                  action="/addManga"
+                  method="POST"
                 >
-                  Add
-                </button>
-              </form>
-            </div>
-          </article>
-        </div>
-      </section>
-    );
+                  <h1 className="title">{result.title}</h1>
+                  <label className="label" for="currentChapter">
+                    Current Chapter
+                  </label>
+                  <input
+                    type="number"
+                    name="currentChapter"
+                    min="1"
+                    max="9999"
+                    className="input currentChapter"
+                  />
+                  <label className="label" for="maxChapter">
+                    Max Chapters(can be adjusted later)
+                  </label>
+                  <p className="maxChapter">{result.chapters}</p>
+                  <label className="label" for="synopsis">
+                    Synopsis
+                  </label>
+                  <textarea className="textarea synopsis">
+                    {result.synopsis}
+                  </textarea>
+                  <label className="label" for="notes">
+                    Notes(premium feature)
+                  </label>
+                  <textarea className="textarea notes"></textarea>
+                  <input type="hidden" name="_csrf" value={csrfToken} />
+                  <button
+                    className="button"
+                    onClick={addManga.bind(event)}
+                    type="submit"
+                  >
+                    Add
+                  </button>
+                </form>
+              </div>
+            </article>
+          </div>
+        </section>
+      );
+    } else {
+      return (
+        <section className="resultCard">
+          <div className="box">
+            <article className="media">
+              <div className="media-left">
+                <figure className="image">
+                  <img src={result.image_url} alt={result.title} />
+                </figure>
+              </div>
+              <div className="media-content">
+                <form
+                  id={result.title.replace(/\s/g, "")}
+                  className="addForm"
+                  action="/addManga"
+                  method="POST"
+                >
+                  <h1 className="title">{result.title}</h1>
+                  <label className="label" for="currentChapter">
+                    Current Chapter
+                  </label>
+                  <input
+                    type="number"
+                    name="currentChapter"
+                    min="1"
+                    max="9999"
+                    className="input currentChapter"
+                  />
+                  <label className="label" for="maxChapter">
+                    Max Chapters(can be adjusted later)
+                  </label>
+                  <p className="maxChapter">{result.chapters}</p>
+                  <label className="label" for="synopsis">
+                    Synopsis
+                  </label>
+                  <textarea className="textarea synopsis">
+                    {result.synopsis}
+                  </textarea>
+                  <label className="label" for="notes">
+                    Notes(premium feature)
+                  </label>
+                  <textarea disabled className="textarea notes"></textarea>
+                  <input type="hidden" name="_csrf" value={csrfToken} />
+                  <button
+                    className="button"
+                    onClick={addManga.bind(event)}
+                    type="submit"
+                  >
+                    Add
+                  </button>
+                </form>
+              </div>
+            </article>
+          </div>
+        </section>
+      );
+    }
   });
 
   return <div className="mangaList">{mangaNodes}</div>;
@@ -280,59 +393,125 @@ const TrackedMangaList = function (props) {
   }
 
   const mangaNodes = props.manga.map(function (manga) {
-    return (
-      <section className="trackedCard">
-        <div className="box">
-          <article className="media">
-            <div className="media-left">
-              <figure className="image">
-                <img src={manga.imageUrl} alt={manga.title} />
-              </figure>
-            </div>
-            <div className="media-content">
-              <form className="updateForm" action="/updateManga" method="PUT">
-                <label className="label">Title:</label>
-                <h1 className="title">{manga.title}</h1>
-                <label className="label">Current Chapter:</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="9999"
-                  defaultValue={manga.currentChapter}
-                  className="input currentChapter"
-                />
-                <label className="label">Max Chapter:</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="9999"
-                  defaultValue={manga.maxChapter}
-                  className="input maxChapter"
-                />
-                <label className="label">Description:</label>
-                <textarea className="description textarea">
-                  {manga.description}
-                </textarea>
-                <input type="hidden" name="_csrf" value={csrfToken} />
+    if (subscribed) {
+      return (
+        <section className="trackedCard">
+          <div className="box">
+            <article className="media">
+              <div className="media-left">
+                <figure className="image">
+                  <img src={manga.imageUrl} alt={manga.title} />
+                </figure>
+              </div>
+              <div className="media-content">
+                <form className="updateForm" action="/updateManga" method="PUT">
+                  <label className="label">Title:</label>
+                  <h1 className="title">{manga.title}</h1>
+                  <label className="label">Current Chapter:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="9999"
+                    defaultValue={manga.currentChapter}
+                    className="input currentChapter"
+                  />
+                  <label className="label">Max Chapter:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="9999"
+                    defaultValue={manga.maxChapter}
+                    className="input maxChapter"
+                  />
+                  <label className="label">Description:</label>
+                  <textarea className="description textarea">
+                    {manga.description}
+                  </textarea>
+                  <label className="label" for="notes">
+                    Notes(premium feature)
+                  </label>
+                  <textarea className="textarea notes">{manga.notes}</textarea>
+                  <input type="hidden" name="_csrf" value={csrfToken} />
+                  <button
+                    className="button"
+                    onClick={updateManga.bind(event)}
+                    type="submit"
+                  >
+                    Update
+                  </button>
+                </form>
                 <button
                   className="button"
-                  onClick={updateManga.bind(event)}
-                  type="submit"
+                  onClick={deleteCard.bind(event, `${manga._id}`)}
                 >
-                  Update
+                  Delete
                 </button>
-              </form>
-              <button
-                className="button"
-                onClick={deleteCard.bind(event, `${manga._id}`)}
-              >
-                Delete
-              </button>
-            </div>
-          </article>
-        </div>
-      </section>
-    );
+              </div>
+            </article>
+          </div>
+        </section>
+      );
+    } else {
+      return (
+        <section className="trackedCard">
+          <div className="box">
+            <article className="media">
+              <div className="media-left">
+                <figure className="image">
+                  <img src={manga.imageUrl} alt={manga.title} />
+                </figure>
+              </div>
+              <div className="media-content">
+                <form className="updateForm" action="/updateManga" method="PUT">
+                  <label className="label">Title:</label>
+                  <h1 className="title">{manga.title}</h1>
+                  <label className="label">Current Chapter:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="9999"
+                    defaultValue={manga.currentChapter}
+                    className="input currentChapter"
+                  />
+                  <label className="label">Max Chapter:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="9999"
+                    defaultValue={manga.maxChapter}
+                    className="input maxChapter"
+                  />
+                  <label className="label">Description:</label>
+                  <textarea className="description textarea">
+                    {manga.description}
+                  </textarea>
+                  <label className="label" for="notes">
+                    Notes(premium feature)
+                  </label>
+                  <textarea disabled className="textarea notes">
+                    {manga.notes}
+                  </textarea>
+                  <input type="hidden" name="_csrf" value={csrfToken} />
+                  <button
+                    className="button"
+                    onClick={updateManga.bind(event)}
+                    type="submit"
+                  >
+                    Update
+                  </button>
+                </form>
+                <button
+                  className="button"
+                  onClick={deleteCard.bind(event, `${manga._id}`)}
+                >
+                  Delete
+                </button>
+              </div>
+            </article>
+          </div>
+        </section>
+      );
+    }
   });
 
   return <div className="mangaList">{mangaNodes}</div>;
@@ -371,6 +550,10 @@ const getToken = () => {
   sendAjax("GET", "/getToken", null, (result) => {
     setup(result.csrfToken);
   });
+  sendAjax("GET", "/getSubscription", null, (result) => {
+    subscribed = result.subscribed;
+    // console.log(subscribed);
+  })
 };
 
 //initializes page

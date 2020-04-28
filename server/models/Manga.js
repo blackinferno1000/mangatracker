@@ -8,6 +8,7 @@ let MangaModel = {};
 const convertId = mongoose.Types.ObjectId;
 const setTitle = (title) => _.escape(title).trim();
 const setDescription = (description) => _.escape(description).trim();
+const setNotes = (note) => _.escape(note).trim();
 const setImageUrl = (image) => _.escape(image).trim();
 
 const MangaSchema = new mongoose.Schema({
@@ -41,6 +42,12 @@ const MangaSchema = new mongoose.Schema({
     trim: true,
     set: setDescription,
   },
+  notes: {
+    type: String,
+    required: true,
+    trim: true,
+    set: setNotes,
+  },
   owner: {
     type: mongoose.Schema.ObjectId,
     required: true,
@@ -58,6 +65,7 @@ MangaSchema.statics.toAPI = (doc) => ({
   maxChapter: doc.maxChapter,
   description: doc.description,
   imageUrl: doc.imageUrl,
+  notes: doc.notes,
 });
 
 MangaSchema.statics.findByOwner = (ownerId, callback) => {
@@ -65,7 +73,7 @@ MangaSchema.statics.findByOwner = (ownerId, callback) => {
     owner: convertId(ownerId),
   };
 
-  return MangaModel.find(search).select('title currentChapter maxChapter description imageUrl').lean().exec(callback);
+  return MangaModel.find(search).select('title currentChapter maxChapter description imageUrl notes').lean().exec(callback);
 };
 
 MangaModel = mongoose.model('Manga', MangaSchema);
