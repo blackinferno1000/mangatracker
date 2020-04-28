@@ -12,19 +12,13 @@ var searchQuery = ""; // let filters = {};
 // let genres = {};
 
 var searchResults = [];
-var csrfToken; //event listener to send get requests
-
-var getManga = function getManga(e) {
-  var getForm = document.querySelector("#getForm");
-  sendGet(e, getForm);
-}; //searches for manga in jikan API
-
+var csrfToken; //searches for manga in jikan API
 
 var searchManga = function searchManga() {
   fetch("https://api.jikan.moe/v3/search/manga?q=".concat(searchQuery, "&page=1&limit=10&type=Manga")).then(function (res) {
     return res.json();
   }).then(function (data) {
-    console.log(data);
+    // console.log(data);
     searchResults = data.results;
     ReactDOM.render( /*#__PURE__*/React.createElement(AddMangaList, {
       manga: searchResults
@@ -34,33 +28,28 @@ var searchManga = function searchManga() {
 
 
 var updateManga = function updateManga(e) {
-  var updateForms = document.querySelectorAll(".updateForm");
-  console.log(updateForms);
+  var updateForms = document.querySelectorAll(".updateForm"); // console.log(updateForms);
+
   sendPut(e, updateForms);
 }; //event listener to send post requests
 
 
 var addManga = function addManga(e) {
-  var addForms = document.querySelectorAll(".addForm");
-  console.log(addForms);
+  var addForms = document.querySelectorAll(".addForm"); // console.log(addForms);
+
   sendPost(e, addForms);
 }; //deletes cards from datamodel and view
 
 
 var deleteCard = function deleteCard(e, id) {
-  // let updateForms = document.querySelectorAll('.updateForms');
-  console.log(e);
-  console.log(id);
+  //weird parameter order change happened from bind method
+  // console.log(e);
+  // console.log(id);
   deleteManga(e);
 }; //updates mangaList on server
 
 
 var deleteManga = function deleteManga(id) {
-  // for (let form of updateForms) {
-  //   if (e.target.form.id === form.id) {
-  //   }
-  // }
-  // _csrf = form.querySelector("input[type='hidden']");
   var formData = "_csrf=".concat(csrfToken, "&id=").concat(id);
   sendAjax("POST", "/deleteManga", formData, function () {
     console.log("succesful deletion");
@@ -95,8 +84,8 @@ var sendPost = function sendPost(e, postForms) {
         description = form.querySelector(".synopsis");
         _csrf = form.querySelector("input[type='hidden']");
         imageUrl = form.parentElement.parentElement.querySelector("img").getAttribute("src");
-        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
-        console.log(formData);
+        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.textContent, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl); // console.log(formData);
+
         sendAjax("POST", action, formData, function (result) {
           mangaList.push(result[0]);
         });
@@ -139,8 +128,8 @@ var sendPut = function sendPut(e, updateForms) {
         description = form.querySelector(".description");
         _csrf = form.querySelector("input[type='hidden']");
         imageUrl = form.parentElement.parentElement.querySelector("img").getAttribute("src");
-        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl);
-        console.log(formData);
+        var formData = "_csrf=".concat(_csrf.value, "&title=").concat(title.textContent, "&currentChapter=").concat(currentChapter.value, "&maxChapter=").concat(maxChapter.value, "&description=").concat(description.value, "&imageUrl=").concat(imageUrl); // console.log(formData);
+
         sendAjax("POST", action, formData, function (result) {
           mangaList.push(result[0]);
         });
@@ -155,7 +144,8 @@ var sendPut = function sendPut(e, updateForms) {
 
   loadMangaFromServer();
   return false;
-};
+}; //searchbar component
+
 
 var SearchBar = function SearchBar(props) {
   return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h1", {
@@ -177,7 +167,8 @@ var SearchBar = function SearchBar(props) {
     value: "Search",
     className: "input"
   }));
-};
+}; //controls component
+
 
 var Controls = function Controls(props) {
   return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("form", {
@@ -206,7 +197,8 @@ var Controls = function Controls(props) {
     className: "button",
     id: "trackButton"
   }, "Tracked"))));
-};
+}; //add section component
+
 
 var AddSection = function AddSection(props) {
   return /*#__PURE__*/React.createElement("section", {
@@ -216,7 +208,8 @@ var AddSection = function AddSection(props) {
   }, "Add a manga:"), /*#__PURE__*/React.createElement("div", {
     id: "addDiv"
   }));
-};
+}; //tracked section component
+
 
 var TrackedSection = function TrackedSection(props) {
   return /*#__PURE__*/React.createElement("section", null, /*#__PURE__*/React.createElement("h1", {
@@ -224,7 +217,8 @@ var TrackedSection = function TrackedSection(props) {
   }, "Tracked Manga:"), /*#__PURE__*/React.createElement("div", {
     id: "trackedScrollWrap"
   }));
-};
+}; //add mangalist component
+
 
 var AddMangaList = function AddMangaList(props) {
   if (props.manga.length === 0) {
@@ -290,7 +284,8 @@ var AddMangaList = function AddMangaList(props) {
   return /*#__PURE__*/React.createElement("div", {
     className: "mangaList"
   }, mangaNodes);
-};
+}; //tracked mangalist component
+
 
 var TrackedMangaList = function TrackedMangaList(props) {
   if (props.manga.length === 0) {
@@ -302,7 +297,6 @@ var TrackedMangaList = function TrackedMangaList(props) {
   }
 
   var mangaNodes = props.manga.map(function (manga) {
-    console.log("".concat(manga._id));
     return /*#__PURE__*/React.createElement("section", {
       className: "trackedCard"
     }, /*#__PURE__*/React.createElement("div", {
@@ -362,16 +356,18 @@ var TrackedMangaList = function TrackedMangaList(props) {
   return /*#__PURE__*/React.createElement("div", {
     className: "mangaList"
   }, mangaNodes);
-};
+}; //get method to retrieve owner's manga
+
 
 var loadMangaFromServer = function loadMangaFromServer() {
   sendAjax("GET", "/getManga", null, function (data) {
-    console.log(data);
+    // console.log(data);
     ReactDOM.render( /*#__PURE__*/React.createElement(TrackedMangaList, {
       manga: data.manga
     }), document.querySelector("#trackedScrollWrap"));
   });
-};
+}; //sets up page
+
 
 var setup = function setup(csrf) {
   csrfToken = csrf;
@@ -383,18 +379,16 @@ var setup = function setup(csrf) {
   }), document.querySelector("#controls"));
   ReactDOM.render( /*#__PURE__*/React.createElement(AddSection, {
     csrf: csrf
-  }), document.querySelector("#content")); // ReactDOM.render(
-  //   <AddMangaList manga={searchResults} csrf={csrf} />,
-  //   document.querySelector("#addDiv")
-  // );
-  // loadMangaFromServer();
-};
+  }), document.querySelector("#content"));
+}; //gets token
+
 
 var getToken = function getToken() {
   sendAjax("GET", "/getToken", null, function (result) {
     setup(result.csrfToken);
   });
-};
+}; //initializes page
+
 
 $(document).ready(function () {
   getToken();

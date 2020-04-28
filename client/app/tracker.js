@@ -6,12 +6,6 @@ let searchQuery = "";
 let searchResults = [];
 let csrfToken;
 
-//event listener to send get requests
-const getManga = (e) => {
-  const getForm = document.querySelector("#getForm");
-  sendGet(e, getForm);
-};
-
 //searches for manga in jikan API
 const searchManga = () => {
   fetch(
@@ -21,7 +15,7 @@ const searchManga = () => {
       return res.json();
     })
     .then((data) => {
-      console.log(data);
+      // console.log(data);
       searchResults = data.results;
       ReactDOM.render(
         <AddMangaList manga={searchResults} />,
@@ -33,35 +27,27 @@ const searchManga = () => {
 //updates manga
 const updateManga = (e) => {
   const updateForms = document.querySelectorAll(".updateForm");
-  console.log(updateForms);
+  // console.log(updateForms);
   sendPut(e, updateForms);
 };
 
 //event listener to send post requests
 const addManga = (e) => {
   const addForms = document.querySelectorAll(".addForm");
-  console.log(addForms);
+  // console.log(addForms);
   sendPost(e, addForms);
 };
 
 //deletes cards from datamodel and view
 const deleteCard = (e, id) => {
-  // let updateForms = document.querySelectorAll('.updateForms');
-  console.log(e);
-  console.log(id);
+  //weird parameter order change happened from bind method
+  // console.log(e);
+  // console.log(id);
   deleteManga(e);
 };
 
 //updates mangaList on server
 const deleteManga = (id) => {
-  // for (let form of updateForms) {
-  //   if (e.target.form.id === form.id) {
-
-  //   }
-  // }
-
-  // _csrf = form.querySelector("input[type='hidden']");
-
   const formData = `_csrf=${csrfToken}&id=${id}`;
   sendAjax("POST", "/deleteManga", formData, () => {
     console.log("succesful deletion");
@@ -88,7 +74,7 @@ const sendPost = (e, postForms) => {
         .querySelector("img")
         .getAttribute("src");
       let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.textContent}&description=${description.value}&imageUrl=${imageUrl}`;
-      console.log(formData);
+      // console.log(formData);
       sendAjax("POST", action, formData, (result) => {
         mangaList.push(result[0]);
       });
@@ -119,7 +105,7 @@ const sendPut = (e, updateForms) => {
         .querySelector("img")
         .getAttribute("src");
       let formData = `_csrf=${_csrf.value}&title=${title.textContent}&currentChapter=${currentChapter.value}&maxChapter=${maxChapter.value}&description=${description.value}&imageUrl=${imageUrl}`;
-      console.log(formData);
+      // console.log(formData);
       sendAjax("POST", action, formData, (result) => {
         mangaList.push(result[0]);
       });
@@ -131,6 +117,7 @@ const sendPut = (e, updateForms) => {
   return false;
 };
 
+//searchbar component
 const SearchBar = (props) => {
   return (
     <section>
@@ -156,6 +143,7 @@ const SearchBar = (props) => {
   );
 };
 
+//controls component
 const Controls = (props) => {
   return (
     <section>
@@ -194,6 +182,7 @@ const Controls = (props) => {
   );
 };
 
+//add section component
 const AddSection = (props) => {
   return (
     <section id="addSection">
@@ -203,6 +192,7 @@ const AddSection = (props) => {
   );
 };
 
+//tracked section component
 const TrackedSection = (props) => {
   return (
     <section>
@@ -212,6 +202,7 @@ const TrackedSection = (props) => {
   );
 };
 
+//add mangalist component
 const AddMangaList = function (props) {
   if (props.manga.length === 0) {
     return (
@@ -278,6 +269,7 @@ const AddMangaList = function (props) {
   return <div className="mangaList">{mangaNodes}</div>;
 };
 
+//tracked mangalist component
 const TrackedMangaList = function (props) {
   if (props.manga.length === 0) {
     return (
@@ -288,7 +280,6 @@ const TrackedMangaList = function (props) {
   }
 
   const mangaNodes = props.manga.map(function (manga) {
-    console.log(`${manga._id}`);
     return (
       <section className="trackedCard">
         <div className="box">
@@ -309,7 +300,6 @@ const TrackedMangaList = function (props) {
                   max="9999"
                   defaultValue={manga.currentChapter}
                   className="input currentChapter"
-                  
                 />
                 <label className="label">Max Chapter:</label>
                 <input
@@ -348,9 +338,10 @@ const TrackedMangaList = function (props) {
   return <div className="mangaList">{mangaNodes}</div>;
 };
 
+//get method to retrieve owner's manga
 const loadMangaFromServer = () => {
   sendAjax("GET", "/getManga", null, (data) => {
-    console.log(data);
+    // console.log(data);
     ReactDOM.render(
       <TrackedMangaList manga={data.manga} />,
       document.querySelector("#trackedScrollWrap")
@@ -358,6 +349,7 @@ const loadMangaFromServer = () => {
   });
 };
 
+//sets up page
 const setup = function (csrf) {
   csrfToken = csrf;
 
@@ -372,21 +364,16 @@ const setup = function (csrf) {
     <AddSection csrf={csrf} />,
     document.querySelector("#content")
   );
-
-  // ReactDOM.render(
-  //   <AddMangaList manga={searchResults} csrf={csrf} />,
-  //   document.querySelector("#addDiv")
-  // );
-
-  // loadMangaFromServer();
 };
 
+//gets token
 const getToken = () => {
   sendAjax("GET", "/getToken", null, (result) => {
     setup(result.csrfToken);
   });
 };
 
+//initializes page
 $(document).ready(function () {
   getToken();
 });

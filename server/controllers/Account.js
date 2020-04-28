@@ -1,26 +1,30 @@
-const models = require('../models');
+const models = require("../models");
 
 const { Account } = models;
 
+//login page
 const loginPage = (req, res) => {
-  res.render('login', { csrfToken: req.csrfToken() });
+  res.render("login", { csrfToken: req.csrfToken() });
 };
 
+//password reset page
 const resetPage = (req, res) => {
-  res.render('reset', { csrfToken: req.csrfToken() });
+  res.render("reset", { csrfToken: req.csrfToken() });
 };
 
+//logs out user
 const logout = (req, res) => {
   req.session.destroy();
-  res.redirect('/');
+  res.redirect("/");
 };
 
+//logs in user
 const login = (req, res) => {
   const username = `${req.body.username}`;
   const password = `${req.body.pass}`;
 
   if (!username || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
+    return res.status(400).json({ error: "All fields are required" });
   }
 
   return Account.AccountModel.authenticate(
@@ -28,27 +32,28 @@ const login = (req, res) => {
     password,
     (err, account) => {
       if (err || !account) {
-        return res.status(400).json({ error: 'Wrong username or password' });
+        return res.status(400).json({ error: "Wrong username or password" });
       }
 
       req.session.account = Account.AccountModel.toAPI(account);
 
-      return res.json({ redirect: '/tracker' });
-    },
+      return res.json({ redirect: "/tracker" });
+    }
   );
 };
 
+//signs user up
 const signup = (req, res) => {
   req.body.username = `${req.body.username}`;
   req.body.pass = `${req.body.pass}`;
   req.body.pass2 = `${req.body.pass2}`;
 
   if (!req.body.username || !req.body.pass || !req.body.pass2) {
-    return res.status(400).json({ error: 'All fields are required' });
+    return res.status(400).json({ error: "All fields are required" });
   }
 
   if (req.body.pass !== req.body.pass2) {
-    return res.status(400).json({ error: 'Passwords do not match' });
+    return res.status(400).json({ error: "Passwords do not match" });
   }
 
   return Account.AccountModel.generateHash(req.body.pass, (salt, hash) => {
@@ -64,21 +69,22 @@ const signup = (req, res) => {
 
     savePromise.then(() => {
       req.session.account = Account.AccountModel.toAPI(newAccount);
-      return res.json({ redirect: '/tracker' });
+      return res.json({ redirect: "/tracker" });
     });
 
     savePromise.catch((err) => {
       console.log(err);
 
       if (err.code === 11000) {
-        return res.status(400).json({ error: 'Username already in use.' });
+        return res.status(400).json({ error: "Username already in use." });
       }
 
-      return res.status(400).json({ error: 'An error occurred' });
+      return res.status(400).json({ error: "An error occurred" });
     });
   });
 };
 
+//updates password of user
 const updatePassword = (req, res) => {
   req.body.username = `${req.body.username}`;
   req.body.oldPass = `${req.body.oldPass}`;
@@ -86,16 +92,16 @@ const updatePassword = (req, res) => {
   req.body.pass2 = `${req.body.pass2}`;
 
   if (
-    !req.body.username
-    || !req.body.oldPass
-    || !req.body.pass
-    || !req.body.pass2
+    !req.body.username ||
+    !req.body.oldPass ||
+    !req.body.pass ||
+    !req.body.pass2
   ) {
-    return res.status(400).json({ error: 'All fields are required' });
+    return res.status(400).json({ error: "All fields are required" });
   }
 
   if (req.body.pass !== req.body.pass2) {
-    return res.status(400).json({ error: 'Passwords do not match' });
+    return res.status(400).json({ error: "Passwords do not match" });
   }
 
   return Account.AccountModel.authenticate(
@@ -103,7 +109,7 @@ const updatePassword = (req, res) => {
     req.body.oldPass,
     (err, account) => {
       if (err || !account) {
-        return res.status(400).json({ error: 'Wrong username or password' });
+        return res.status(400).json({ error: "Wrong username or password" });
       }
 
       req.session.account = Account.AccountModel.toAPI(account);
@@ -118,7 +124,7 @@ const updatePassword = (req, res) => {
 
         savePromise.then(() => {
           req.session.account = Account.AccountModel.toAPI(account);
-          return res.json({ redirect: '/tracker' });
+          return res.json({ redirect: "/tracker" });
         });
 
         savePromise.catch((error) => {
@@ -128,13 +134,14 @@ const updatePassword = (req, res) => {
           //   return res.status(400).json({ error: 'Username already in use.' });
           // }
 
-          return res.status(400).json({ error: 'An error occurred' });
+          return res.status(400).json({ error: "An error occurred" });
         });
       });
-    },
+    }
   );
 };
 
+//gets token
 const getToken = (req, res) => {
   const csrfJSON = {
     csrfToken: req.csrfToken(),
