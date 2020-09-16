@@ -1,7 +1,7 @@
 {
-  "name": "finalproject",
+  "name": "MangaTracker",
   "version": "1.0.0",
-  "description": "final project for IGME 430",
+  "description": "Web application to track reading progress for manga.",
   "main": "./server/app.js",
   "scripts": {
     "build": "gulp build",

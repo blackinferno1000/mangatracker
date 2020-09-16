@@ -14,7 +14,7 @@ const redis = require('redis');
 
 const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
-const dbURL = process.env.MONGODB_URI || 'mongodb://localhost/finalProject';
+const dbURL = process.env.MONGODB_URI || 'mongodb://localhost/mangatracker';
 
 const mongooseOptions = {
   useNewUrlParser: true,
