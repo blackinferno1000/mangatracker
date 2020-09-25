@@ -1,7 +1,7 @@
 {
   "name": "MangaTracker",
   "version": "1.0.0",
-  "description": "Web application to track reading progress for manga.",
+  "description": "Web application to track reading progress for manga. Has a subscription feature that has added functionality associated with it.",
   "main": "./server/app.js",
   "scripts": {
     "build": "gulp build",
